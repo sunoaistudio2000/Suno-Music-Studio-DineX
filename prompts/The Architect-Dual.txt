@@ -1,0 +1,67 @@
+Title: The Architect (Duet Edition)
+Prompt:
+
+[Intro: Dark, eerie piano stabs and low 808 rumble]
+[Spoken - Male]: Yeah... they thought I was finished.
+[Spoken - Female]: They thought we were done.
+[Spoken - Together]: Back from the basement. Let's go.
+
+[Verse 1: Male Vocals]
+(Rapid-fire nasal delivery)
+The clock is ticking, I'm picking the lock of the system
+The rhythm is hitting, I'm flippin' the script and they missed him
+I’m back in the kitchen, igniting the friction with vision
+An engine of precision, I'm making a lethal decision!
+
+[Verse 1: Female Vocals]
+(Sharp aggressive technical flow)
+The pressure is heavy, I'm steady, I'm ready for battle
+The snakes in the grass, I can hear 'em, I'm shaking the rattle
+I’m climbing the castle, avoiding the hassle of acting
+I’m focused on facts and the way that my rhymes are impacting!
+
+[Chorus: Duet Harmonies]
+(Energetic and aggressive)
+We’re the architects of every single wreck we left behind
+A master of the struggle, keep the puzzle in our mind
+They want to see us fall, want to see us lose our grip
+But we’re titans on the mic, we never let the logic slip!
+
+[Verse 2: Male Vocals]
+I’m a lyrical miracle, cynical, hitting the pinnacle
+Every syllable critical, keeping the spirit original
+I’m surgical, vertical, breaking the cycle and turning...
+
+[Verse 2: Female Vocals]
+The bridges are burning but look at the lessons I'm learning
+I was drowning in shadows, fighting the gallows and ghosts
+Now I’m the one they fear most from the coast to the coasts!
+
+[Instrumental Solo: Aggressive scratching and dark synth lead]
+
+[Bridge: Call and Response]
+[Male Vocals]: They said we’d never make it out of the rain...
+[Female Vocals]: But the rain became the fuel for the fire in our veins!
+[Together - Shouted]: YEAH! BREAK THE CAGE!
+
+[Final Chorus: Duet Harmonies]
+(Maximum energy, layered male and female vocals)
+We’re the architects of every single wreck we left behind
+A master of the struggle, keep the puzzle in our mind
+They want to see us fall, want to see us lose our grip
+But we’re titans on the mic, we never let the logic slip!
+
+[Outro: Alternating Male and Female]
+[Male]: Precision...
+[Female]: Decision...
+[Together]: We’re the ghosts in the machine...
+[End]
+[Fade out]
+
+Style:	90 BPM, Detroit Hip Hop, male and female duet, aggressive male nasal rasp, sharp female technical rap, dark piano, heavy 808s.	Explicitly defines both vocal identities.
+
+Negative Tags:	Melodic singing, Mumble rap, Auto-tune, Pop vocals, Slow flow, Happy chords, Acoustic guitar, Low energy.	"Female vocals" removed so the AI allows the woman to rap.
+
+Style Weight:	0.78	
+Weirdness:	0.38	
+Audio Weight:	0.22	

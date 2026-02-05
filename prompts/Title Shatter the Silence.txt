@@ -1,0 +1,72 @@
+Title: Shatter the Silence
+
+Prompt:
+
+[Intro: Heavy distorted guitar riff, fast drum fill]
+
+[Verse 1: Gritty, lower-register vocals]
+Counting the seconds in this empty room
+Waiting for the spark to ignite the gloom
+They told me to stay, told me to wait my turn
+But I’ve got a fire that’s starting to burn
+Yeah, the walls are thin and the floor is cold
+I’m breaking the script that was already told!
+
+[Pre-Chorus: Building energy, rising pitch]
+Can you feel the tension? 
+Can you hear the sound?
+Of a thousand heartbeats
+Rising from the ground!
+
+[Chorus: Powerful belted vocals, anthemic]
+Shatter the silence, tear down the sky!
+I’m finding my wings, I’m learning to fly!
+No more excuses, no more "maybe next time"
+I’m claiming the mountain, I’m starting the climb!
+(Yeah, I’m starting the climb!)
+
+[Verse 2: Driving rhythm, punchy delivery]
+The static is screaming inside of my head
+Drowning out everything everyone said
+I’m making a path through the wreckage and dust
+Turning the iron away from the rust
+The engine is humming, the gears are in place
+I’m looking the future right in the face!
+
+[Chorus: Powerful belted vocals]
+Shatter the silence, tear down the sky!
+I’m finding my wings, I’m learning to fly!
+No more excuses, no more "maybe next time"
+I’m claiming the mountain, I’m starting the climb!
+
+[Bridge: Stripped back, then building]
+[Bass solo]
+In the quiet...
+In the dark...
+[Crescendo]
+I FOUND THE SPARK!
+
+[Guitar Solo: Fast, melodic, heavy wah-wah effect]
+
+[Final Chorus: Maximum energy, vocal ad-libs]
+SHATTER THE SILENCE! (Tear it down!)
+Finding my wings! (Watch me fly!)
+No more excuses, this is my time
+I’m at the top of the world and the view is sublime!
+
+[Outro: Fading guitar feedback, heavy final drum hit]
+I’m not coming down...
+No...
+[End]
+
+Style: Hard Rock, 140 BPM, Female rock lead, Raspy powerful vocals, Distorted power chords, Overdriven electric guitar, Driving drums, Heavy bassline, Arena reverb, High energy, no male vocals, no acoustic, no pop, no electronic, no jazz, no mumble.
+
+Negative Tags: male vocals, man voice, boy singer, pop music, clean singing, acoustic guitar, piano, electronic beats, synthesizers, mumble, autotune, slow tempo, jazz, techno, smooth soul
+
+Vocal Gender: Female
+
+Model: V5
+
+Style Weight	0.82	
+Weirdness	0.37	
+Audio Weight	0.08	

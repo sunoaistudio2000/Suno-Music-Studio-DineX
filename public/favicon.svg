@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Rounded yellowish Suno-style icon -->
+  <circle cx="16" cy="16" r="15" fill="#f59e0b"/>
+  <circle cx="16" cy="16" r="12" fill="#fbbf24"/>
+  <!-- Simple sun / music vibe: small center -->
+  <circle cx="16" cy="16" r="4" fill="#fcd34d"/>
+</svg>

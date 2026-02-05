@@ -1,0 +1,72 @@
+Title: Neon Wasteland
+
+Prompt:
+
+[Intro: Pulsing heavy synthesizer bass, flickering glitch percussion, and cold metallic drone]
+[Spoken: Distant, echoing voice with slight bit-crushed effect]
+System check... initiated.
+The city never sleeps... it just waits for the crash.
+
+[Verse 1: Low, breathy rhythmic delivery, robotic but emotive]
+The static is screaming, I’m chasing the ghost in the wire
+The circuit is dreaming, igniting the spark of the fire
+I’m lost in the chrome, where the signals are starting to bleed
+A digital home, for a soul with a desperate need
+The skyline is jagged, I’m crossing the edge of the light
+The shadows are ragged, dissolving inside of the night
+I’m hacking the pulse, of a world that is made out of glass
+The future is false, just watching the centuries pass!
+
+[Chorus: Explosive and wide, layered synth-stacks and driving electronic beat]
+We’re burning the code, carrying the weight of the machine
+Surviving the road, in a world that’s forgotten the green
+They want to erase us, want to see the memory fade
+But the data is deep, we’re the masters of all we have made!
+
+[Verse 2: High-tension delivery, building with distorted layers]
+I hear the sirens calling, through the rain and the neon haze
+The towers are falling, lost in a vertical maze
+I’m cleaning the drive, of a thousand corrupted files
+Just staying alive, across the electric miles
+The network is flowing, even when the power is low
+The signal is growing, nowhere left for the losers to go
+I don’t need the binary, I don’t need the zero or one
+I’m finding the truth, before the reboot is done!
+
+[Instrumental Solo: Screeching synth lead, heavy distorted bass rhythm, and mechanical industrial claps]
+
+[Bridge: Minimalist breakdown, heartbeat kick drum and sweeping filter effects]
+(Whispered voice)
+They said the grid was locked... and the exit was deleted...
+(Building intensely)
+But we found the breach... where the system was defeated!
+(Shouted)
+OVERRIDE! BREAK THE CORE!
+
+[Final Chorus: Maximum energy, soaring synth leads, heavy wall of sound]
+We’re burning the code, carrying the weight of the machine
+Surviving the road, in a world that’s forgotten the green
+They want to erase us, want to see the memory fade
+But the data is deep, we’re the masters of all we have made!
+
+[Outro: Glitchy fading vocals, cold digital decay]
+Transmission...
+Connection...
+Lost in the stream...
+[End]
+[Fade out with white noise]
+
+Style: 110 BPM, Dark Synth-Pop, Industrial, Cinematic, Heavy Analog Synths, Glitch Percussion, Gated Reverb, Dystopian Atmosphere, Cyberpunk.
+
+Negative Tags: Reggae, Roots, Acoustic, Organic, Guitar, Brass, Soulful, Warm, Tropical, Happy, Sunny, 72 BPM, Gospel, Human.
+
+Vocal Gender: Male
+
+Model: V5
+
+Style Weight: 0.85 High obedience to ensure the synths are heavy and the drums are electronic.
+
+Weirdness: 045 Slightly higher to allow for cool "glitch" sounds and digital artifacts.
+
+Audio Weight: 0 Since you are not using a persona, leave this empty to let the AI create a new voice.
+

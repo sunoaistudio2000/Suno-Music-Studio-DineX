@@ -1,0 +1,62 @@
+Title: Midnight Echo
+Prompt:
+
+[Intro: Bright digital synth brass and a driving 125BPM disco beat]
+[Spoken: Smooth, deep charismatic voice]
+Love is a game... and we play by the rules of the heart.
+
+[Verse 1: Deep, breathy male vocals with high-pitched background echoes]
+I'm sailing on a sea of blue (Sea of blue)
+Searching for a heart that’s true (Heart that’s true)
+The night is young, the moon is bright (Moon is bright)
+I’m holding on with all my might (All my might)
+Oh, can't you see the fire in my eyes? (In my eyes)
+Underneath the lonely starlit skies! (Starlit skies)
+
+[Chorus: High-pitched multi-layered falsetto, very melodic]
+It’s a symphony of love, it’s a rhythm in the night
+Everything’s okay, everything’s alright
+You’re the lady of my dreams, you’re the angel in my soul
+Take my heart away, let me lose control!
+
+[Verse 2: Deep baritone with falsetto response]
+A lonely room, a silent phone (Silent phone)
+I’m sitting here all on my own (On my own)
+I hear your ghost walk down the hall (Down the hall)
+I see your shadow on the wall (On the wall)
+But baby, time will never change my mind (Change my mind)
+You’re the only girl I’ll ever find! (Ever find)
+
+[Instrumental Solo: Melodic synthesizer lead and bright disco bells]
+
+[Bridge: Dramatic synth pads and building percussion]
+(Deep voice)
+Don't walk away...
+(High falsetto)
+Don't break my heart!
+(Shouted)
+LADY!
+
+[Final Chorus: Maximum energy, layered falsetto harmonies]
+It’s a symphony of love, it’s a rhythm in the night
+Everything’s okay, everything’s alright
+You’re the lady of my dreams, you’re the angel in my soul
+Take my heart away, let me lose control!
+
+[Outro: Fading disco beat with falsetto echoes]
+Symphony of love... (Of love)
+Angel in my soul... (My soul)
+[End]
+[Fade out]
+
+Style: 125BPM Euro-Disco, 80s Synth-Pop, high-pitched falsetto harmonies, call-and-response vocals, breathy deep male tenor, digital drum machine, FM synth bells, lush gated reverb, catchy melodic hooks.
+
+Negative Tags: Acoustic, Reggae, Rap, Aggressive, Nasal, 808, Trap, Dark Piano, Grunge, Metal, Distorted guitars, Low energy, Slow tempo, Blues.
+
+Vocal Gender: Male
+
+Model: V4
+
+Style Weight	0.85	Locks in the "Euro-Disco" production and FM bells.
+Weirdness	0.25	Keeps the falsetto clean and the synth timing perfect.
+Audio Weight	0.00	Fresh vocal generation.

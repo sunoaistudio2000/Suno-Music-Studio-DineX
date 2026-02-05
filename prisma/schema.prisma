@@ -1,0 +1,89 @@
+// MongoDB + Prisma (NextAuth JWT: User + Account only; no Session)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth (JWT sessions: session in cookie; User + Account in DB only)
+model User {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?      @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  generations   Generation[]
+  personas      Persona[]
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Generation {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String   @db.ObjectId
+  taskId             String
+  prompt             String
+  title              String?
+  style              String?
+  negativeTags       String?
+  model              String
+  instrumental       Boolean
+  customMode         Boolean
+  vocalGender        String?
+  personaId          String?
+  styleWeight        Float?
+  weirdnessConstraint Float?
+  audioWeight        Float?
+  createdAt          DateTime @default(now())
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks             Track[]
+
+  @@fulltext([title, style, prompt])
+  @@index([userId])
+}
+
+model Track {
+  id             String     @id @default(auto()) @map("_id") @db.ObjectId
+  generationId   String?    @db.ObjectId
+  taskId         String
+  audioId        String?
+  title          String
+  index          Int        // 1-based
+  audioUrl       String?
+  expiresAt      DateTime?
+  localFilename  String?    // e.g. taskId-1-Title.mp3 for playback after save
+  createdAt      DateTime   @default(now())
+  generation     Generation? @relation(fields: [generationId], references: [id], onDelete: SetNull)
+}
+
+model Persona {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  personaId   String   // from KIE
+  name        String
+  description String
+  taskId      String
+  audioId     String
+  audio_url   String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
