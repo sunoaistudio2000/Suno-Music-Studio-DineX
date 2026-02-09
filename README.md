@@ -9,6 +9,9 @@ We are going to add more features later, including a web-based music app that wi
 #### 🎤 Generating Persona
 We implemented persona generation in [kie.ai](https://kie.ai/)  to give vocal tracks a unique musical identity. A persona defines the performer’s voice, tone, emotion, and delivery, as well as the overall style, mood, and instrumentation. Personas allow you to generate new tracks that feel like they belong to the same musical world, even if the vocals differ. Only vocal tracks can be used to create a persona, and each persona can be saved, edited, and reused for consistent music generation.
 
+#### 🎶 Extending Music
+We implemented music extension in [kie.ai](https://kie.ai/) to allow generated tracks to continue beyond their original length or evolve creatively. Extensions preserve the core genre, tempo, and musical identity while introducing new sections, arrangements, or energy. By using Custom Parameters, you can modify style, weights, and other settings for creative variation, or keep them off for a seamless continuation of the original track. Each extension can be generated as a separate track or physically appended to the original for a cohesive listening experience.
+ 
 #### 👉 Links & Resources
 
 - [Suno](https://suno.com/)  
@@ -44,5 +47,7 @@ npm run dev
 📺 **Video:(Music Generation)** [Watch on YouTube](https://youtu.be/NrE-OgeP3vw) 
 
 📺 **Video:(Persona Generation)** [Watch on YouTube](https://youtu.be/x_RFbRAQIIY) 
+
+📺 **Video:(Extending Music)** [Watch on YouTube](https://youtu.be/fonbDowlX2w) 
 
 
