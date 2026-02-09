@@ -1,0 +1,82 @@
+Title: Voice of the Night
+
+Prompt:
+
+[Intro: Soft duduk melody layered with dark synth pad, slow heartbeat kick]
+[Spoken – Male (Armenian, low and calm)]:
+Գիշերը խոսում է նրանց հետ, ովքեր չեն քնում…
+
+[Verse 1: Male Vocals – Armenian]
+
+(Deep, emotional delivery)
+Քայլում եմ լուռ փողոցներով, մտքերս՝ ծանր
+Լույսերը մարում են, բայց ցավը դեռ պարզ
+Աշխարհը խոստացավ, հետո լռեց
+Իմ անունը քամին տարավ, բայց սիրտս մնաց այստեղ
+
+Ես տեսել եմ երազներ՝ կոտրված ապակի
+Արցունքը՝ սառած, բայց հույսը՝ դեռ կա մի
+Եթե հարցնեն՝ ով եմ, կասեմ՝ ճանապարհ
+Որ միշտ առաջ է գնում, թեկուզ մենակ ու քար
+
+[Chorus: Male Vocals – Armenian]
+
+(Melodic, powerful)
+Գիշերվա ձայնը ինձ հետ է խոսում
+Ասում է՝ «դիմացի՛ր, դեռ ամենը քոնն է լինելու»
+Թող մթությունը ծածկի այս քաղաքը հին
+Ես լույս կդառնամ, թեկուզ մենակ, թեկուզ հիմա
+
+[Verse 2: Female Vocals – English]
+
+(Soft but strong, emotional clarity)
+I’ve been walking through the echoes of yesterday
+Trying to find the words I never got to say
+Every shadow knows my name, every scar remembers
+I learned how to burn without turning into embers
+
+They told me time would heal, but time just taught me truth
+You either stand your ground or disappear in youth
+So I breathe in the silence, let the night decide
+If I fall, I fall forward — never run and hide
+
+[Chorus: Duet – Armenian & English]
+
+(Wide, emotional harmonies)
+Գիշերվա ձայնը կանչում է ինձ
+It says “hold on, you’re closer than you think”
+Եթե անգամ մոլորվեմ այս լռության մեջ
+I’ll find my way back, I’ll find my way back
+
+[Bridge: Minimal, duduk + pad]
+
+[Female – Armenian (whispered)]:
+Ամեն ցավ մի օր դառնում է երգ…
+[Male – English]:
+And every song remembers who we were.
+
+[Final Chorus: Duet – Armenian dominant]
+
+(Full instrumentation)
+Գիշերվա ձայնը իմ ներսում է հնչում
+Չի թողնում կոտրվեմ, չի թողնում մոռանամ
+Թեկուզ աշխարհը փակվի իմ դեմ
+Ես կքայլեմ առաջ, մինչև լույսը գա
+
+[Outro: Duduk fading into reverb]
+
+[Male – Armenian]:
+Լույսը միշտ գալիս է…
+[End – fade out]
+
+Style: 85 BPM, Modern Armenian Pop-Hip-Hop, emotional male–female duet, Eastern Armenian lyrics, cinematic night mood, duduk accents, dark synth pads, deep 808s, introspective and atmospheric.
+
+Negative Tags: Happy, upbeat, party, EDM, tropical, reggae, Latin, rock, metal, punk, jazz, funk, acoustic, choir, children vocals, auto-tune, fast tempo, bright major key.
+
+Vocal Gender: Duet
+
+Model: V5
+
+Style Weight	0.65	
+Weirdness	0.65
+Audio Weight	0.2	

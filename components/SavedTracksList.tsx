@@ -88,6 +88,14 @@ export const DELETE_BTN_CLASS =
 type SavedTracksListProps = {
   selectedFilename?: string | null;
   onSelectFilename?: (filename: string | null) => void;
+  /**
+   * Selection mode:
+   * - "persona": filter vocal tracks, show persona checkmarks (legacy showSelection behaviour)
+   * - "extend": show ALL tracks, simple select buttons (no delete, no persona check)
+   * - undefined: normal mode with delete buttons
+   */
+  selectionMode?: "persona" | "extend";
+  /** @deprecated Use selectionMode="persona" instead. Kept for backwards compat. */
   showSelection?: boolean;
   /** When provided (e.g. from page), used instead of fetching; avoids duplicate requests. */
   personaMetadata?: Record<string, PersonaTaskMeta> | null;
@@ -120,6 +128,19 @@ function filterVocalTracks(
   });
 }
 
+/** For extend mode, only show tracks whose taskId exists in metadata (already limited to 14 days). */
+function filterRecentTracks(
+  files: string[],
+  tasks: Record<string, PersonaTaskMeta> | null
+): string[] {
+  if (!tasks) return [];
+  return files.filter((filename) => {
+    const parsed = parseSavedFilename(filename);
+    if (!parsed) return false;
+    return Boolean(tasks[parsed.taskId]);
+  });
+}
+
 /** True if this filename's track (taskId + audioId from metadata) already has a persona. */
 function trackHasPersona(
   filename: string,
@@ -134,6 +155,18 @@ function trackHasPersona(
   const audioId = track?.id?.trim();
   if (!audioId) return false;
   return personas.some((p) => p.taskId === parsed.taskId && p.audioId === audioId);
+}
+
+/** True if this track was created via Extend Music. */
+function isExtendedTrack(
+  filename: string,
+  tasks: Record<string, PersonaTaskMeta> | null
+): boolean {
+  if (!tasks) return false;
+  const parsed = parseSavedFilename(filename);
+  if (!parsed) return false;
+  const task = tasks[parsed.taskId];
+  return task?.isExtension === true;
 }
 
 /** True if this track is instrumental (task-level flag or no audioId in metadata). */
@@ -154,7 +187,8 @@ function isInstrumentalTrack(
 export function SavedTracksList({
   selectedFilename: controlledFilename,
   onSelectFilename,
-  showSelection = false,
+  selectionMode,
+  showSelection: showSelectionLegacy = false,
   personaMetadata: personaMetadataProp,
   personas: personasProp,
   showLoadFormRadio = false,
@@ -163,7 +197,12 @@ export function SavedTracksList({
   showSearch = false,
   onNewGeneration,
 }: SavedTracksListProps) {
+  // Derive effective selection state from selectionMode (preferred) or legacy showSelection prop
+  const showSelection = selectionMode != null ? true : showSelectionLegacy;
+  const isPersonaMode = selectionMode === "persona" || (showSelectionLegacy && selectionMode == null);
+  const isExtendMode = selectionMode === "extend";
   const [savedFiles, setSavedFiles] = useState<string[]>([]);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(true);
   const [deletingFilename, setDeletingFilename] = useState<string | null>(null);
   const [filenameToDelete, setFilenameToDelete] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -183,8 +222,13 @@ export function SavedTracksList({
   const personasEffective = personasProp ?? [];
 
   const filesToShow = useMemo(
-    () => (showSelection ? filterVocalTracks(savedFiles, tasksEffective) : savedFiles),
-    [showSelection, savedFiles, tasksEffective]
+    () =>
+      isPersonaMode
+        ? filterVocalTracks(savedFiles, tasksEffective)
+        : isExtendMode
+          ? filterRecentTracks(savedFiles, tasksEffective)
+          : savedFiles,
+    [isPersonaMode, isExtendMode, savedFiles, tasksEffective]
   );
   const searchFilteredFiles = useMemo(() => {
     if (searchTaskIds === null) return filesToShow;
@@ -212,6 +256,8 @@ export function SavedTracksList({
       }
     } catch {
       setSavedFiles([]);
+    } finally {
+      setIsLoadingFiles(false);
     }
   }, []);
 
@@ -273,6 +319,14 @@ export function SavedTracksList({
     }
   }, [showSelection, searchFilteredFiles, onSelectFilename]);
 
+  // Also reset selection when the selected file is no longer visible (e.g. after search filter)
+  useEffect(() => {
+    if (!showSelection || !controlledFilename || !onSelectFilename) return;
+    if (searchFilteredFiles.length > 0 && !searchFilteredFiles.includes(controlledFilename)) {
+      onSelectFilename(null);
+    }
+  }, [showSelection, controlledFilename, searchFilteredFiles, onSelectFilename]);
+
   const handleConfirmDelete = useCallback(async () => {
     const filename = filenameToDelete;
     if (!filename) return;
@@ -327,7 +381,16 @@ export function SavedTracksList({
         )}
       </div>
       <div className={collapsed ? "hidden" : "mt-4"}>
-        {showSearch && (
+        {isLoadingFiles && (
+          <div className="flex items-center justify-center gap-2 py-4 text-sm text-gray-400">
+            <span
+              className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-gray-600 border-t-blue-500"
+              aria-hidden
+            />
+            <span>Loading tracks…</span>
+          </div>
+        )}
+        {!isLoadingFiles && showSearch && (
           <div className="mb-4">
             {isSearching && (
               <div className="mb-2 flex items-center justify-center gap-2 text-sm text-gray-400">
@@ -353,11 +416,13 @@ export function SavedTracksList({
             />
           </div>
         )}
-        {(showSelection ? filesToShow.length === 0 : savedFiles.length === 0) ? (
+        {isLoadingFiles ? null : (showSelection ? filesToShow.length === 0 : savedFiles.length === 0) ? (
           <p className="text-sm text-gray-500">
-            {showSelection
+            {isPersonaMode
               ? "No tracks with vocals to select."
-              : "No saved tracks yet. Generate music and use Download to save files."}
+              : isExtendMode
+                ? "No tracks to extend. Only tracks from the last 14 days can be extended."
+                : "No saved tracks yet. Generate music and use Download to save files."}
           </p>
         ) : searchFilteredFiles.length === 0 ? (
           <p className="text-sm text-gray-500">
@@ -408,6 +473,7 @@ export function SavedTracksList({
                     const parsed = parseSavedFilename(filename);
                     const taskId = parsed?.taskId ?? null;
                     const instrumental = isInstrumentalTrack(filename, tasksEffective);
+                    const extended = isExtendedTrack(filename, tasksEffective);
                     return (
                       <li
                         key={filename}
@@ -426,6 +492,17 @@ export function SavedTracksList({
                               </svg>
                             </span>
                           )}
+                          {extended && (
+                            <span
+                              className="inline-flex shrink-0 text-purple-400"
+                              title="Extended"
+                              aria-label="Extended"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                              </svg>
+                            </span>
+                          )}
                         </span>
                       <StyledAudioPlayer
                         className="min-w-[360px] flex-1"
@@ -435,7 +512,7 @@ export function SavedTracksList({
                         aria-label={`Play ${parsed?.title ?? filename}`}
                       />
                       {showSelection ? (
-                        trackHasPersona(filename, tasksEffective, personasEffective) ? (
+                        isPersonaMode && trackHasPersona(filename, tasksEffective, personasEffective) ? (
                           <span
                             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-gray-500 opacity-60"
                             aria-label="Persona already created for this track"
@@ -529,35 +606,38 @@ export function SavedTracksList({
         )}
       </div>
 
-      <ConfirmDialog
-        open={filenameToDelete !== null}
-        onClose={() => setFilenameToDelete(null)}
-        onConfirm={handleConfirmDelete}
-        title={
-          filenameToDelete !== null && trackHasPersona(filenameToDelete, tasksEffective, personasEffective)
-            ? "Track connected to Persona"
-            : "Delete Track"
-        }
-        message={
-          filenameToDelete !== null && trackHasPersona(filenameToDelete, tasksEffective, personasEffective)
-            ? "This track is connected to a persona. Delete the persona first."
-            : "Are you sure you want to delete this track? It will be removed from the audio folder."
-        }
-        confirmLabel="Delete"
-        cancelLabel={
-          filenameToDelete !== null && trackHasPersona(filenameToDelete, tasksEffective, personasEffective)
-            ? "Close"
-            : "Cancel"
-        }
-        variant={
-          filenameToDelete !== null && trackHasPersona(filenameToDelete, tasksEffective, personasEffective)
-            ? "default"
-            : "danger"
-        }
-        hideConfirm={
-          filenameToDelete !== null && trackHasPersona(filenameToDelete, tasksEffective, personasEffective)
-        }
-      />
+      {/* Delete dialog hidden in selection modes (no delete buttons shown) */}
+      {!showSelection && (
+        <ConfirmDialog
+          open={filenameToDelete !== null}
+          onClose={() => setFilenameToDelete(null)}
+          onConfirm={handleConfirmDelete}
+          title={
+            filenameToDelete !== null && trackHasPersona(filenameToDelete, tasksEffective, personasEffective)
+              ? "Track connected to Persona"
+              : "Delete Track"
+          }
+          message={
+            filenameToDelete !== null && trackHasPersona(filenameToDelete, tasksEffective, personasEffective)
+              ? "This track is connected to a persona. Delete the persona first."
+              : "Are you sure you want to delete this track? It will be removed from the audio folder."
+          }
+          confirmLabel="Delete"
+          cancelLabel={
+            filenameToDelete !== null && trackHasPersona(filenameToDelete, tasksEffective, personasEffective)
+              ? "Close"
+              : "Cancel"
+          }
+          variant={
+            filenameToDelete !== null && trackHasPersona(filenameToDelete, tasksEffective, personasEffective)
+              ? "default"
+              : "danger"
+          }
+          hideConfirm={
+            filenameToDelete !== null && trackHasPersona(filenameToDelete, tasksEffective, personasEffective)
+          }
+        />
+      )}
     </section>
   );
 }

@@ -48,6 +48,9 @@ export default function Home() {
   const [personaDataLoading, setPersonaDataLoading] = useState(false);
   const [formResetKey, setFormResetKey] = useState(0);
 
+  const [extendStatusState, setExtendStatusState] = useState<StatusState>(null);
+  const [extendResetKey, setExtendResetKey] = useState(0);
+
   const handleNewGeneration = useCallback(() => {
     // Stop all playing audio and reset to start
     document.querySelectorAll("audio").forEach((el) => {
@@ -62,6 +65,17 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  const handleNewExtension = useCallback(() => {
+    document.querySelectorAll("audio").forEach((el) => {
+      el.pause();
+      el.currentTime = 0;
+    });
+    setExtendStatusState(null);
+    setSelectedAudioFilename(null);
+    setExtendResetKey((k) => k + 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   const handlePersonaTrackSelect = useCallback((filename: string | null) => {
     setSelectedViewPersonaId(null);
     setSelectedAudioFilename(filename);
@@ -71,6 +85,22 @@ export default function Home() {
     setSelectedAudioFilename(null);
     setSelectedViewPersonaId(personaId);
   }, []);
+
+  // Resolve audioId from persona metadata for the extend feature
+  const resolveAudioId = useCallback(
+    (filename: string | null): string | null => {
+      if (!filename || !personaTasks) return null;
+      const parsed = parseSavedFilename(filename);
+      if (!parsed) return null;
+      const task = personaTasks[parsed.taskId];
+      if (!task) return null;
+      const track = task.tracks?.[parsed.index - 1];
+      return track?.id ?? null;
+    },
+    [personaTasks]
+  );
+
+  const extendAudioId = resolveAudioId(mode === "extend" ? selectedAudioFilename : null);
 
   const fetchPersonaData = useCallback(async () => {
     setPersonaDataLoading(true);
@@ -201,15 +231,25 @@ export default function Home() {
 
         <SavedTracksList
           selectedFilename={selectedAudioFilename}
-          onSelectFilename={mode === "persona" ? handlePersonaTrackSelect : setSelectedAudioFilename}
-          showSelection={mode === "persona"}
+          onSelectFilename={
+            mode === "persona"
+              ? handlePersonaTrackSelect
+              : mode === "extend"
+                ? setSelectedAudioFilename
+                : setSelectedAudioFilename
+          }
+          selectionMode={mode === "persona" ? "persona" : mode === "extend" ? "extend" : undefined}
           personaMetadata={personaTasks}
           personas={personaList}
           showLoadFormRadio={mode === "generate"}
           selectedLoadFormFilename={mode === "generate" ? loadFormSelectedFilename : null}
           onSelectLoadFormFilename={mode === "generate" ? setLoadFormSelectedFilename : undefined}
-          showSearch={mode === "generate" || mode === "persona"}
-          onNewGeneration={mode === "generate" ? handleNewGeneration : undefined}
+          showSearch={mode === "generate" || mode === "persona" || mode === "extend"}
+          onNewGeneration={
+            mode === "generate"
+              ? handleNewGeneration
+              : undefined
+          }
         />
 
         {mode === "persona" && (
@@ -234,7 +274,16 @@ export default function Home() {
           </>
         )}
         {mode === "cover" && <CoverSection />}
-        {mode === "extend" && <ExtendSection />}
+        {mode === "extend" && (
+          <ExtendSection
+            statusState={extendStatusState}
+            setStatusState={setExtendStatusState}
+            selectedAudioId={extendAudioId}
+            loadTaskId={selectedAudioFilename ? parseSavedFilename(selectedAudioFilename)?.taskId ?? null : null}
+            personas={personaList}
+            resetKey={extendResetKey}
+          />
+        )}
         {mode === "persona" && (
           <CreatePersonaSection
             selectedAudioFilename={selectedAudioFilename}

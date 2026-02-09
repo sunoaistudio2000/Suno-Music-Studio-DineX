@@ -53,6 +53,11 @@ model Generation {
   styleWeight        Float?
   weirdnessConstraint Float?
   audioWeight        Float?
+  // Extension-specific fields
+  isExtension        Boolean  @default(false)
+  sourceAudioId      String?  // audioId of the track being extended
+  continueAt         Float?   // time point in seconds
+  defaultParamFlag   Boolean? // whether custom params were used for extension
   createdAt          DateTime @default(now())
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tracks             Track[]

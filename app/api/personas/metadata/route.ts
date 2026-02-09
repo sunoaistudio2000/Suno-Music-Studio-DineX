@@ -28,10 +28,13 @@ export async function GET() {
     if (taskIds.length > 0) {
       const generations = await prisma.generation.findMany({
         where: { taskId: { in: taskIds } },
-        select: { taskId: true, instrumental: true },
+        select: { taskId: true, instrumental: true, isExtension: true },
       });
       for (const g of generations) {
-        if (tasks[g.taskId]) tasks[g.taskId].instrumental = g.instrumental;
+        if (tasks[g.taskId]) {
+          tasks[g.taskId].instrumental = g.instrumental;
+          if (g.isExtension) tasks[g.taskId].isExtension = true;
+        }
       }
     }
     return NextResponse.json({ tasks });

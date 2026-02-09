@@ -1,10 +1,38 @@
 "use client";
 
-export function ExtendSection() {
+import type { StatusState, SavedPersona } from "@/app/types";
+import { ExtendForm } from "./ExtendForm";
+import { GenerationStatus } from "@/components/generate/GenerationStatus";
+
+type ExtendSectionProps = {
+  statusState: StatusState;
+  setStatusState: (state: StatusState) => void;
+  selectedAudioId?: string | null;
+  /** taskId of the selected track's generation, used to populate form fields. */
+  loadTaskId?: string | null;
+  personas?: SavedPersona[];
+  resetKey?: number;
+};
+
+export function ExtendSection({
+  statusState,
+  setStatusState,
+  selectedAudioId,
+  loadTaskId,
+  personas,
+  resetKey,
+}: ExtendSectionProps) {
   return (
-    <section className="mb-10 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-6">
-      <h2 className="mb-4 text-lg font-semibold text-gray-200">Extend Music</h2>
-      <p className="text-sm text-gray-500">Coming soon.</p>
-    </section>
+    <>
+      <ExtendForm
+        statusState={statusState}
+        setStatusState={setStatusState}
+        selectedAudioId={selectedAudioId}
+        loadTaskId={loadTaskId}
+        personas={personas}
+        resetKey={resetKey}
+      />
+      <GenerationStatus statusState={statusState} />
+    </>
   );
 }

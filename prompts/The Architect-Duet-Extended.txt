@@ -1,0 +1,82 @@
+Title: The Architect (Duet Edition)
+
+Prompt:
+
+[Intro: Muted dark synth pulse, filtered piano echoes, restrained 808s building tension]
+[Spoken – Male]: This isn’t the rebuild…
+[Spoken – Female]: This is the expansion.
+[Spoken – Together]: Watch the structure rise.
+
+Verse 3: Male Vocals
+
+(Cleaner but still aggressive, controlled nasal rasp)
+I’m drawing lines in the dust where the future is standing
+Every failure a draft, every loss was a landing
+I calculated the weight of the hate they were handing
+Now the pressure’s adaptive, my vision expanded
+
+Blueprints in my head, every word is intentional
+Less reaction, more lethal, more cold and professional
+I don’t shout for attention, I bend it, I shape it
+Turn the silence to violence, then perfectly place it
+
+Verse 3: Female Vocals
+
+(Confident, technical, sharper pauses)
+I don’t rush, I assemble, I measure the fall
+Every move architectural, I’m scaling the wall
+From the cracks in the system, I learned how to climb
+Now I’m carving precision directly in time
+
+I was fire in the chaos, now ice in control
+Every bar is a pillar, every breath is a goal
+I don’t chase what they offer, I author the plan
+I’m the proof in the structure — built stronger than man
+
+Chorus: Duet Harmonies
+
+(Strong, steady, less explosive, more commanding)
+We don’t break, we redesign what the pressure made
+Every scar is a mark of the plans we laid
+They tried to box our minds, tried to slow our pace
+Now we’re writing the code for a higher place
+
+Instrumental Break
+
+(Stripped drums, rolling sub-bass, glitch accents, delayed scratches)
+
+Bridge: Call and Response
+
+Male
+: Every wall they built became a frame…
+Female
+: Every doubt they threw just fed the flame
+[Together]: SAME ROOTS — NEW SHAPE!
+
+Final Chorus: Duet Harmonies
+
+(Slightly higher intensity, layered but controlled)
+We don’t break, we redesign what the pressure made
+From the ruins to the rise, every step is paved
+They wanted repetition, we elevated
+Same foundation — but the form upgraded
+
+Outro
+
+[Together]: Still the architects — just updated.
+[Fade out]
+
+Style: Detroit hip hop at 90 BPM with dark piano, heavy but controlled 808s, evolving synth textures, and a confident male–female rap duet that balances restrained aggression with precision and authority.
+
+Negative Tags: Melodic singing, Mumble rap, Auto-tune, Pop vocals, Happy chords, Acoustic guitar, Low energy, Overly aggressive shouting
+
+Vocal Gender: Male
+
+Model: V5
+
+Style Weight	0.72	
+
+Weirdness	0.42	
+
+Audio Weight	0.2	
+  

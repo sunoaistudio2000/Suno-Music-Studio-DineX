@@ -1,51 +1,26 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { type StatusState, FAILED_STATUSES, IN_PROGRESS_STATUSES } from "@/app/types";
-import type { SavedPersona } from "@/app/types";
+import { useState, useEffect } from "react";
+import type { StatusState } from "@/app/types";
+import { IN_PROGRESS_STATUSES } from "@/app/types";
 import { InfoHint } from "@/components/shared/InfoHint";
 import { Toggle } from "@/components/shared/Toggle";
-
-const MODELS = ["V4", "V4_5", "V4_5PLUS", "V4_5ALL", "V5"] as const;
-
-const MODEL_CHAR_LIMITS: Record<(typeof MODELS)[number], { prompt: number; style: number }> = {
-  V4: { prompt: 3000, style: 200 },
-  V4_5: { prompt: 5000, style: 1000 },
-  V4_5PLUS: { prompt: 5000, style: 1000 },
-  V4_5ALL: { prompt: 5000, style: 1000 },
-  V5: { prompt: 5000, style: 1000 },
-};
-
-/** Model version tooltip text (description only, no version prefix). */
-const MODEL_DESCRIPTIONS: Record<(typeof MODELS)[number], string> = {
-  V5: "Superior musical expression, faster generation",
-  V4_5PLUS: "Delivers richer sound, new ways to create, max 8 min",
-  V4_5: "Enables smarter prompts, faster generations, max 8 min",
-  V4_5ALL: "ALL enables smarter prompts, faster generations, max 8 min",
-  V4: "Improves vocal quality, max 4 min",
-};
-
-const DEFAULTS = {
-  prompt: "A calm and relaxing piano track with soft melodies",
-  customMode: true,
-  instrumental: true,
-  model: "V4",
-  style: "Classical",
-  title: "Peaceful Piano Meditation",
-  negativeTags: "Heavy Metal, Upbeat Drums",
-  vocalGender: "m" as const,
-  styleWeight: 0.65,
-  weirdnessConstraint: 0.65,
-  audioWeight: 0.65,
-};
-
-const INPUT_CLASS =
-  "w-full rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] px-3 py-2 text-[#f5f5f5] placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500";
-const SELECT_CLASS =
-  "w-full rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] pl-3 pr-8 py-2 text-[#f5f5f5] focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500";
-const NUMBER_WRAPPER_CLASS =
-  "flex rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500";
-const STEPPER_BTN = "flex flex-1 items-center justify-center px-2 text-[#f5f5f5] hover:bg-[#2a2a2a]";
+import { PlusIcon, MinusIcon } from "@/components/shared/FormIcons";
+import { useStatusPolling } from "@/hooks/useStatusPolling";
+import { useModelHighlight } from "@/hooks/useModelHighlight";
+import { usePersonas } from "@/hooks/usePersonas";
+import {
+  MODELS,
+  MODEL_CHAR_LIMITS,
+  MODEL_DESCRIPTIONS,
+  DEFAULTS,
+  clampStep,
+  INPUT_CLASS,
+  SELECT_CLASS,
+  NUMBER_WRAPPER_CLASS,
+  STEPPER_BTN,
+  type ModelKey,
+} from "@/lib/generation-constants";
 
 type GenerateFormProps = {
   statusState: StatusState;
@@ -56,21 +31,6 @@ type GenerateFormProps = {
   resetKey?: number;
 };
 
-function clampStep(v: number, delta: number): number {
-  return Math.max(0, Math.min(1, Math.round((v + delta) * 100) / 100));
-}
-
-const PlusIcon = () => (
-  <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 12 12">
-    <path d="M6 3v6M3 6h6" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-const MinusIcon = () => (
-  <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 12 12">
-    <path d="M4 6h4" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-
 export function GenerateForm({ statusState, setStatusState, loadTaskId, resetKey = 0 }: GenerateFormProps) {
   const [prompt, setPrompt] = useState(DEFAULTS.prompt);
   const [customMode, setCustomMode] = useState(DEFAULTS.customMode);
@@ -80,34 +40,14 @@ export function GenerateForm({ statusState, setStatusState, loadTaskId, resetKey
   const [title, setTitle] = useState(DEFAULTS.title);
   const [negativeTags, setNegativeTags] = useState(DEFAULTS.negativeTags);
   const [vocalGender, setVocalGender] = useState<"m" | "f" | "d">(DEFAULTS.vocalGender);
-  const [personas, setPersonas] = useState<SavedPersona[]>([]);
   const [selectedPersonaId, setSelectedPersonaId] = useState("");
   const [styleWeight, setStyleWeight] = useState(DEFAULTS.styleWeight);
   const [weirdnessConstraint, setWeirdnessConstraint] = useState(DEFAULTS.weirdnessConstraint);
   const [audioWeight, setAudioWeight] = useState(DEFAULTS.audioWeight);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const fetchPersonas = useCallback(async () => {
-    try {
-      const res = await fetch("/api/personas");
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.personas)) setPersonas(data.personas);
-      else setPersonas([]);
-    } catch {
-      setPersonas([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchPersonas();
-  }, [fetchPersonas]);
-
-  useEffect(() => {
-    const onCreated = () => fetchPersonas();
-    window.addEventListener("persona-created", onCreated);
-    return () => window.removeEventListener("persona-created", onCreated);
-  }, [fetchPersonas]);
+  const { startPolling, stopPolling, setError } = useStatusPolling({ setStatusState });
+  const modelHighlight = useModelHighlight(model);
+  const personas = usePersonas();
 
   useEffect(() => {
     if (resetKey === 0) return;
@@ -160,10 +100,6 @@ export function GenerateForm({ statusState, setStatusState, loadTaskId, resetKey
     };
   }, [loadTaskId]);
 
-  const setError = useCallback(
-    (error: string) => setStatusState({ taskId: "", status: "ERROR", tracks: [], error }),
-    [setStatusState]
-  );
   const isGenerating =
     statusState != null && IN_PROGRESS_STATUSES.includes(statusState.status as (typeof IN_PROGRESS_STATUSES)[number]);
   const missingStyleOrTitle = instrumental && (style.trim() === "" || title.trim() === "");
@@ -172,86 +108,8 @@ export function GenerateForm({ statusState, setStatusState, loadTaskId, resetKey
   const invalidForm = customMode
     ? (instrumental ? missingStyleOrTitle : missingStylePromptOrTitle)
     : prompt.trim() === "";
-  const charLimits = MODEL_CHAR_LIMITS[model as (typeof MODELS)[number]];
+  const charLimits = MODEL_CHAR_LIMITS[model as ModelKey];
   const promptLimit = customMode ? charLimits.prompt : 500;
-
-  const stopPolling = useCallback(() => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  }, []);
-
-  const pollStatus = useCallback(
-    async (taskId: string) => {
-      try {
-        const res = await fetch(`/api/generate/status?taskId=${encodeURIComponent(taskId)}`);
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Failed to fetch status");
-          stopPolling();
-          return;
-        }
-        const d = data?.data;
-        const status = (d?.status ?? data?.status ?? "PENDING").toString();
-        const response = d?.response ?? {};
-        const rawSuno = response.sunoData ?? response.suno_data ?? response.data;
-        const rawArray = Array.isArray(rawSuno)
-          ? rawSuno.filter((t: unknown) => t != null)
-          : rawSuno != null
-            ? [rawSuno]
-            : [];
-        const tracks = rawArray.map((t: Record<string, unknown>, index: number) => ({
-          id: String(t.id ?? index),
-          audioUrl: String(t.audioUrl ?? t.audio_url ?? ""),
-          streamAudioUrl: t.streamAudioUrl ?? t.stream_audio_url != null ? String(t.stream_audio_url) : undefined,
-          imageUrl: t.imageUrl ?? t.image_url != null ? String(t.image_url) : undefined,
-          prompt: t.prompt != null ? String(t.prompt) : undefined,
-          modelName: t.modelName ?? t.model_name != null ? String(t.model_name) : undefined,
-          title: String(t.title ?? "Untitled"),
-          tags: t.tags != null ? String(t.tags) : undefined,
-          createTime: t.createTime != null ? String(t.createTime) : undefined,
-          duration: typeof t.duration === "number" ? t.duration : undefined,
-        }));
-        const errorMessage =
-          d?.errorMessage ?? d?.error_message ?? d?.msg ?? (typeof d?.error === "string" ? d.error : null);
-        const isSuccessStatus =
-          status === "SUCCESS" || status === "COMPLETED" || status?.toLowerCase() === "complete";
-        const displayError =
-          !isSuccessStatus && errorMessage && typeof errorMessage === "string" ? errorMessage : undefined;
-        setStatusState({
-          taskId,
-          status,
-          tracks,
-          error: displayError,
-        });
-        if (isSuccessStatus && tracks.length > 0) {
-          try {
-            await fetch("/api/audio/save", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                taskId,
-                tracks: tracks.map((t) => ({ id: t.id, audioUrl: t.audioUrl, title: t.title })),
-              }),
-            });
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new CustomEvent("audio-saved"));
-            }
-          } catch {
-            // ignore save errors
-          }
-        }
-        if (isSuccessStatus || FAILED_STATUSES.includes(status as (typeof FAILED_STATUSES)[number])) {
-          stopPolling();
-        }
-      } catch (err) {
-        setError((err as Error).message);
-        stopPolling();
-      }
-    },
-    [setStatusState, setError, stopPolling]
-  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -300,8 +158,7 @@ export function GenerateForm({ statusState, setStatusState, loadTaskId, resetKey
         return;
       }
       setStatusState({ taskId, status: "PENDING", tracks: [] });
-      pollStatus(taskId);
-      pollRef.current = setInterval(() => pollStatus(taskId), 8000);
+      startPolling(taskId);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -331,10 +188,11 @@ export function GenerateForm({ statusState, setStatusState, loadTaskId, resetKey
               Prompt{(!customMode || !instrumental) && <span className="text-red-500"> *</span>}
             </label>
             <InfoHint
-            text={`Max ${promptLimit} characters`}
-            tooltip="Character limit"
+            text="Description of the desired audio content"
+            tooltip={`Max ${promptLimit} characters`}
             id="prompt-limit-tooltip"
             compact
+            highlighted={modelHighlight}
           />
           </div>
           <textarea
@@ -359,7 +217,7 @@ export function GenerateForm({ statusState, setStatusState, loadTaskId, resetKey
               <label className="text-sm text-gray-400">Model</label>
               <span aria-label="Model version">
                 <InfoHint
-                  text={MODEL_DESCRIPTIONS[model as (typeof MODELS)[number]] ?? MODEL_DESCRIPTIONS.V4}
+                  text={MODEL_DESCRIPTIONS[model as ModelKey] ?? MODEL_DESCRIPTIONS.V4}
                   tooltip="Options"
                   id="model-version-tooltip"
                   compact
@@ -388,8 +246,8 @@ export function GenerateForm({ statusState, setStatusState, loadTaskId, resetKey
                   Title<span className="text-red-500"> *</span>
                 </label>
                 <InfoHint
-                text="Max 80 characters"
-                tooltip="Character limit"
+                text="Title for the generated music track"
+                tooltip="Max 80 characters"
                 id="title-limit-tooltip"
                 compact
               />
@@ -409,10 +267,11 @@ export function GenerateForm({ statusState, setStatusState, loadTaskId, resetKey
                 </label>
                 {charLimits && (
                 <InfoHint
-                  text={`Max ${charLimits.style} characters`}
-                  tooltip="Character limit"
+                  text="Music style specification for the generated audio"
+                  tooltip={`Max ${charLimits.style} characters`}
                   id="style-limit-tooltip"
                   compact
+                  highlighted={modelHighlight}
                 />
               )}
               </div>

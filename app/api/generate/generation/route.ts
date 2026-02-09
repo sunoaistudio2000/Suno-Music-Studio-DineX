@@ -37,6 +37,10 @@ export async function GET(request: NextRequest) {
       styleWeight: generation.styleWeight ?? undefined,
       weirdnessConstraint: generation.weirdnessConstraint ?? undefined,
       audioWeight: generation.audioWeight ?? undefined,
+      // Extension fields
+      isExtension: generation.isExtension ?? false,
+      defaultParamFlag: generation.defaultParamFlag ?? undefined,
+      continueAt: generation.continueAt ?? undefined,
     },
   });
 }

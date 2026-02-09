@@ -42,6 +42,8 @@ export type PersonaTaskMeta = {
   tracks: PersonaTrackMeta[];
   /** True when the generation was instrumental (from Generation.instrumental). */
   instrumental?: boolean;
+  /** True when the track was created via Extend Music. */
+  isExtension?: boolean;
 };
 
 /** Saved persona entry: API response plus link to source track. */

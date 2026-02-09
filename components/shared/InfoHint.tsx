@@ -13,6 +13,8 @@ export type InfoHintProps = {
   tooltipShiftRight?: number;
   /** Max width for the tooltip (e.g. "300px"). */
   tooltipMaxWidth?: string;
+  /** When true, the icon stays blue to indicate the tooltip value is dynamic (e.g. changes with model). */
+  highlighted?: boolean;
 };
 
 const tooltipBase =
@@ -26,7 +28,7 @@ const tooltipCenteredWide =
 const tooltipRight =
   "right-0 text-left min-w-[18rem] max-w-[min(28rem,90vw)]";
 
-export function InfoHint({ text, tooltip, id, compact, tooltipCenter, tooltipShiftRight, tooltipMaxWidth }: InfoHintProps) {
+export function InfoHint({ text, tooltip, id, compact, tooltipCenter, tooltipShiftRight, tooltipMaxWidth, highlighted }: InfoHintProps) {
   const centerOnIcon = compact || tooltipCenter;
   const tooltipClass = centerOnIcon
     ? compact
@@ -47,9 +49,9 @@ export function InfoHint({ text, tooltip, id, compact, tooltipCenter, tooltipShi
       className="group relative flex cursor-help items-center gap-0.5 text-xs text-gray-500"
       aria-describedby={id}
     >
-      <span className="relative flex shrink-0 rounded-full p-0.5 transition-colors group-hover:bg-blue-500/20">
+      <span className={`relative flex shrink-0 rounded-full p-0.5 transition-colors group-hover:bg-blue-500/20${highlighted ? " bg-blue-500/20" : ""}`}>
         <svg
-          className="h-4 w-4 shrink-0 text-gray-500 transition-colors group-hover:text-blue-400"
+          className={`h-4 w-4 shrink-0 transition-colors group-hover:text-blue-400${highlighted ? " text-blue-400" : " text-gray-500"}`}
           fill="currentColor"
           viewBox="0 0 20 20"
           aria-hidden

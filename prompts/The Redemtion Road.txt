@@ -63,7 +63,6 @@ Vocal Gender: Male
 
 Model: V5
 
-
 Style Weight	0.78	
 
 Weirdness	0.33	
