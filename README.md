@@ -12,6 +12,9 @@ We implemented persona generation in [kie.ai](https://kie.ai/)  to give vocal tr
 #### 🎶 Extending Music
 We implemented music extension in [kie.ai](https://kie.ai/) to allow generated tracks to continue beyond their original length or evolve creatively. Extensions preserve the core genre, tempo, and musical identity while introducing new sections, arrangements, or energy. By using Custom Parameters, you can modify style, weights, and other settings for creative variation, or keep them off for a seamless continuation of the original track. Each extension can be generated as a separate track or physically appended to the original for a cohesive listening experience.
  
+#### 🎶 Upload & Extend Music
+We’ve added a new feature that lets you upload your own MP3 tracks and extend them directly from the server. The process uses an upload step followed by an extend step, with files hosted temporarily on the [kie.ai](https://kie.ai/)  server. This is especially useful for tracks that may no longer exist on the main server after 14 days, as your uploaded files remain accessible for extension unless manually deleted. By adjusting prompt, style, and weights, you can create creative extensions while keeping the core identity of your track intact.
+
 #### 👉 Links & Resources
 
 - [Suno](https://suno.com/)  
@@ -49,5 +52,7 @@ npm run dev
 📺 **Video:(Persona Generation)** [Watch on YouTube](https://youtu.be/x_RFbRAQIIY) 
 
 📺 **Video:(Extending Music)** [Watch on YouTube](https://youtu.be/fonbDowlX2w) 
+
+📺 **Video:(Upload & Extend Music)** [Watch on YouTube](https://youtu.be/oLdW8281ykk) 
 
 

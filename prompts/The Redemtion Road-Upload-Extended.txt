@@ -1,0 +1,65 @@
+Title: Redemption Road
+Prompt:
+
+[Intro: Dub delay tail from previous track, kick and rimshot fade in]
+[Spoken: Calm, grounded tone]
+The road still open…
+Just different stones beneath the feet.
+
+[Verse 3: Sing-jay transitioning into conscious rap]
+Morning in the city, hear the sirens with the birds
+Same sun rising, different meanings in the words
+From the sand to the pavement, still walking upright
+Carrying the fire through the longest of nights
+Planto más verdad, donde el miedo creció (I plant more truth where fear once grew)
+Sigo firme en la ruta, aunque el viento cambió (I stay firm on the road, even when the wind changed)
+No busco poder, ni un trono de acero (I don’t seek power or a throne of steel)
+Solo pasos conscientes marcando el sendero (Just conscious steps marking the path)
+
+[Chorus: Hybrid sing-rap, soulful and steady]
+Still walking the road, yeah the lesson remains
+Different rhythm moving, but the message the same
+Quieren romper la unión, volvernos atrás (They want to break unity, pull us back)
+Pero el amor nos guía, siempre más allá (But love guides us, always beyond)
+
+[Verse 4: Clear conscious rap flow, relaxed but sharp]
+Wisdom in my cadence, history in my tone
+Every scar a chapter, every verse a stone
+No division in my language, no venom in my breath
+I speak life in the places obsessed with death
+Desde la raíz hasta el bloque final (From the roots to the final block)
+La verdad camina sin mirar atrás (Truth walks forward, never looking back)
+Same soul, new voice, same destination
+Elevation through sound, no hesitation
+
+[Bridge: Dub-style breakdown, echo and space]
+(Spoken)
+The rhythm change…
+But the heartbeat don’t.
+(Sung)
+Seguimos de pie… sin romper la fe (We stand tall, without breaking faith)
+
+[Final Chorus: Layered vocals, restrained triumph]
+Still walking the road, carrying what we know
+Past and future meeting in the undertow
+Aunque cambie el paso, aunque cambie el son (Even if the step changes, even if the rhythm shifts)
+La brújula es amor… y apunta al sol (The compass is love, and it points to the sun)
+
+[Outro: Spoken-sung, fading with delay]
+Different streets…
+Same redemption…
+The road continues…
+[Fade out]
+
+Style: 72–76 BPM Roots Reggae evolving into conscious reggae-rap, one-drop foundation with subtle boom-bap influence, warm bass, organ accents, dub space, soulful baritone with rhythmic rap delivery.
+
+Negative Tags: Trap, Drill, Aggressive rap, Auto-tune, EDM, Pop hooks, High-energy club beats, Metal, Distorted guitars.
+Vocal Gender: Male
+
+Model: V5
+
+Style Weight	0.70	
+
+Weirdness	0.40	
+
+Audio Weight	0.22

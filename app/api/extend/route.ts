@@ -8,6 +8,7 @@ const KIE_BASE = "https://api.kie.ai/api/v1";
 export type ExtendBody = {
   audioId: string;
   defaultParamFlag: boolean;
+  instrumental?: boolean;
   model?: string;
   prompt?: string;
   style?: string;
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
   const {
     audioId,
     defaultParamFlag,
+    instrumental = false,
     model = "V4",
     prompt,
     style,
@@ -77,9 +79,15 @@ export async function POST(request: NextRequest) {
   }
 
   if (defaultParamFlag) {
-    if (!prompt?.trim() || !style?.trim() || !title?.trim() || continueAt == null || continueAt <= 0) {
+    if (!style?.trim() || !title?.trim() || continueAt == null || continueAt <= 0) {
       return NextResponse.json(
-        { error: "In custom mode, prompt, style, title, and continueAt are required" },
+        { error: "In custom mode, style, title, and continueAt are required" },
+        { status: 422 }
+      );
+    }
+    if (!instrumental && !prompt?.trim()) {
+      return NextResponse.json(
+        { error: "In custom mode with vocals, prompt is required" },
         { status: 422 }
       );
     }
@@ -98,6 +106,7 @@ export async function POST(request: NextRequest) {
   const payload: Record<string, unknown> = {
     audioId: audioId.trim(),
     defaultParamFlag,
+    instrumental,
     model: effectiveModel,
     callBackUrl: getCallbackUrl(),
     prompt: prompt?.trim() ?? "",
@@ -151,7 +160,7 @@ export async function POST(request: NextRequest) {
       taskId,
       prompt: prompt?.trim() ?? "",
       customMode: false,
-      instrumental: false,
+      instrumental,
       model: effectiveModel,
       title: defaultParamFlag ? (title ?? null) : null,
       style: defaultParamFlag ? (style ?? null) : null,

@@ -23,20 +23,37 @@ export async function GET() {
 async function deleteTracksAndOrphanGenerations(filename: string): Promise<void> {
   const tracksToDelete = await prisma.track.findMany({
     where: { localFilename: filename },
-    select: { generationId: true },
+    select: { generationId: true, taskId: true },
   });
   const generationIds = Array.from(
     new Set(
-      (tracksToDelete as { generationId: string | null }[])
+      (tracksToDelete as { generationId: string | null; taskId: string }[])
         .map((t) => t.generationId)
         .filter((id): id is string => id != null)
     )
   );
+  const taskIds = Array.from(
+    new Set(
+      (tracksToDelete as { generationId: string | null; taskId: string }[])
+        .map((t) => t.taskId)
+    )
+  );
+
   await prisma.track.deleteMany({ where: { localFilename: filename } });
+
+  // Clean up orphan generations by generationId
   for (const generationId of generationIds) {
     const remaining = await prisma.track.count({ where: { generationId } });
     if (remaining === 0) {
       await prisma.generation.deleteMany({ where: { id: generationId } });
+    }
+  }
+
+  // Also clean up by taskId (covers tracks where generationId was null)
+  for (const taskId of taskIds) {
+    const remaining = await prisma.track.count({ where: { taskId } });
+    if (remaining === 0) {
+      await prisma.generation.deleteMany({ where: { taskId } });
     }
   }
 }

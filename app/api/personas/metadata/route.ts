@@ -4,18 +4,16 @@ import type { PersonaTaskMeta, PersonaTrackMeta } from "@/app/types";
 
 export async function GET() {
   try {
-    const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
     const tracks = await prisma.track.findMany({
       where: {
         taskId: { not: "" },
-        createdAt: { gte: fourteenDaysAgo },
       },
       orderBy: [{ taskId: "asc" }, { index: "asc" }],
     });
     const tasks: Record<string, PersonaTaskMeta> = {};
     for (const t of tracks) {
       if (!tasks[t.taskId]) {
-        tasks[t.taskId] = { taskId: t.taskId, tracks: [] };
+        tasks[t.taskId] = { taskId: t.taskId, tracks: [], createdAt: t.createdAt.toISOString() };
       }
       const meta: PersonaTrackMeta = {
         audio_url: t.audioUrl ?? "",
@@ -28,12 +26,15 @@ export async function GET() {
     if (taskIds.length > 0) {
       const generations = await prisma.generation.findMany({
         where: { taskId: { in: taskIds } },
-        select: { taskId: true, instrumental: true, isExtension: true },
+        select: { taskId: true, instrumental: true, isExtension: true, uploadUrl: true },
       });
       for (const g of generations) {
         if (tasks[g.taskId]) {
           tasks[g.taskId].instrumental = g.instrumental;
-          if (g.isExtension) tasks[g.taskId].isExtension = true;
+          if (g.isExtension) {
+            tasks[g.taskId].isExtension = true;
+            if (g.uploadUrl) tasks[g.taskId].isUploadExtension = true;
+          }
         }
       }
     }

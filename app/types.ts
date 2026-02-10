@@ -44,6 +44,10 @@ export type PersonaTaskMeta = {
   instrumental?: boolean;
   /** True when the track was created via Extend Music. */
   isExtension?: boolean;
+  /** True when the track was created via Upload & Extend Music. */
+  isUploadExtension?: boolean;
+  /** ISO date string of when the earliest track in this task was created. */
+  createdAt?: string;
 };
 
 /** Saved persona entry: API response plus link to source track. */

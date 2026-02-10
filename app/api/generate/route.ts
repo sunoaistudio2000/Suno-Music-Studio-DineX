@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
       taskId,
       prompt: prompt.trim() || (customMode && instrumental ? "Instrumental" : ""),
       customMode,
-      instrumental: customMode ? instrumental : false,
+      instrumental,
       model: customMode ? model : "",
       // Only store custom-mode fields when customMode is true
       title: customMode ? (title ?? null) : null,

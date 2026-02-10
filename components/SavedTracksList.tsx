@@ -92,9 +92,10 @@ type SavedTracksListProps = {
    * Selection mode:
    * - "persona": filter vocal tracks, show persona checkmarks (legacy showSelection behaviour)
    * - "extend": show ALL tracks, simple select buttons (no delete, no persona check)
+   * - "uploadExtend": same as extend (recent tracks, simple select buttons)
    * - undefined: normal mode with delete buttons
    */
-  selectionMode?: "persona" | "extend";
+  selectionMode?: "persona" | "extend" | "uploadExtend";
   /** @deprecated Use selectionMode="persona" instead. Kept for backwards compat. */
   showSelection?: boolean;
   /** When provided (e.g. from page), used instead of fetching; avoids duplicate requests. */
@@ -111,25 +112,44 @@ type SavedTracksListProps = {
   onNewGeneration?: () => void;
 };
 
-/** When showSelection is true, only include vocal files (exclude instrumental tracks). */
+/** When showSelection is true, only include vocal files (exclude instrumental tracks) within 14 days. */
 function filterVocalTracks(
   files: string[],
   tasks: Record<string, PersonaTaskMeta> | null
 ): string[] {
   if (!tasks) return [];
+  const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
   return files.filter((filename) => {
     const parsed = parseSavedFilename(filename);
     if (!parsed) return false;
     const task = tasks[parsed.taskId];
     if (!task) return false;
+    if (task.createdAt && new Date(task.createdAt).getTime() < fourteenDaysAgo) return false;
     if (task.instrumental === true) return false;
     const track = task.tracks?.[parsed.index - 1];
     return Boolean(track?.id);
   });
 }
 
-/** For extend mode, only show tracks whose taskId exists in metadata (already limited to 14 days). */
+/** For extend mode, only show tracks whose taskId exists in metadata and are within 14 days. */
 function filterRecentTracks(
+  files: string[],
+  tasks: Record<string, PersonaTaskMeta> | null
+): string[] {
+  if (!tasks) return [];
+  const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  return files.filter((filename) => {
+    const parsed = parseSavedFilename(filename);
+    if (!parsed) return false;
+    const task = tasks[parsed.taskId];
+    if (!task) return false;
+    if (task.createdAt && new Date(task.createdAt).getTime() < fourteenDaysAgo) return false;
+    return true;
+  });
+}
+
+/** For uploadExtend mode, show ALL tracks whose taskId exists in metadata (no date filter). */
+function filterAllTracks(
   files: string[],
   tasks: Record<string, PersonaTaskMeta> | null
 ): string[] {
@@ -157,7 +177,7 @@ function trackHasPersona(
   return personas.some((p) => p.taskId === parsed.taskId && p.audioId === audioId);
 }
 
-/** True if this track was created via Extend Music. */
+/** True if this track was created via Extend Music (but not Upload & Extend). */
 function isExtendedTrack(
   filename: string,
   tasks: Record<string, PersonaTaskMeta> | null
@@ -166,7 +186,33 @@ function isExtendedTrack(
   const parsed = parseSavedFilename(filename);
   if (!parsed) return false;
   const task = tasks[parsed.taskId];
-  return task?.isExtension === true;
+  return task?.isExtension === true && !task?.isUploadExtension;
+}
+
+/** True if this track was created via Upload & Extend Music. */
+function isUploadExtendedTrack(
+  filename: string,
+  tasks: Record<string, PersonaTaskMeta> | null
+): boolean {
+  if (!tasks) return false;
+  const parsed = parseSavedFilename(filename);
+  if (!parsed) return false;
+  const task = tasks[parsed.taskId];
+  return task?.isUploadExtension === true;
+}
+
+/** True if this track was created more than 14 days ago (expired on Suno servers). */
+function isExpiredTrack(
+  filename: string,
+  tasks: Record<string, PersonaTaskMeta> | null
+): boolean {
+  if (!tasks) return false;
+  const parsed = parseSavedFilename(filename);
+  if (!parsed) return false;
+  const task = tasks[parsed.taskId];
+  if (!task?.createdAt) return false;
+  const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  return new Date(task.createdAt).getTime() < fourteenDaysAgo;
 }
 
 /** True if this track is instrumental (task-level flag or no audioId in metadata). */
@@ -200,7 +246,7 @@ export function SavedTracksList({
   // Derive effective selection state from selectionMode (preferred) or legacy showSelection prop
   const showSelection = selectionMode != null ? true : showSelectionLegacy;
   const isPersonaMode = selectionMode === "persona" || (showSelectionLegacy && selectionMode == null);
-  const isExtendMode = selectionMode === "extend";
+  const isExtendMode = selectionMode === "extend" || selectionMode === "uploadExtend";
   const [savedFiles, setSavedFiles] = useState<string[]>([]);
   const [isLoadingFiles, setIsLoadingFiles] = useState(true);
   const [deletingFilename, setDeletingFilename] = useState<string | null>(null);
@@ -221,14 +267,17 @@ export function SavedTracksList({
   const tasksEffective = personaMetadataProp ?? null;
   const personasEffective = personasProp ?? [];
 
+  const isUploadExtendMode = selectionMode === "uploadExtend";
   const filesToShow = useMemo(
     () =>
       isPersonaMode
         ? filterVocalTracks(savedFiles, tasksEffective)
-        : isExtendMode
-          ? filterRecentTracks(savedFiles, tasksEffective)
-          : savedFiles,
-    [isPersonaMode, isExtendMode, savedFiles, tasksEffective]
+        : isUploadExtendMode
+          ? filterAllTracks(savedFiles, tasksEffective)
+          : isExtendMode
+            ? filterRecentTracks(savedFiles, tasksEffective)
+            : savedFiles,
+    [isPersonaMode, isUploadExtendMode, isExtendMode, savedFiles, tasksEffective]
   );
   const searchFilteredFiles = useMemo(() => {
     if (searchTaskIds === null) return filesToShow;
@@ -420,8 +469,10 @@ export function SavedTracksList({
           <p className="text-sm text-gray-500">
             {isPersonaMode
               ? "No tracks with vocals to select."
-              : isExtendMode
-                ? "No tracks to extend. Only tracks from the last 14 days can be extended."
+              : isUploadExtendMode
+                ? "No tracks to extend."
+                : isExtendMode
+                  ? "No tracks to extend. Only tracks from the last 14 days can be extended."
                 : "No saved tracks yet. Generate music and use Download to save files."}
           </p>
         ) : searchFilteredFiles.length === 0 ? (
@@ -474,6 +525,8 @@ export function SavedTracksList({
                     const taskId = parsed?.taskId ?? null;
                     const instrumental = isInstrumentalTrack(filename, tasksEffective);
                     const extended = isExtendedTrack(filename, tasksEffective);
+                    const uploadExtended = isUploadExtendedTrack(filename, tasksEffective);
+                    const expired = isUploadExtendMode && isExpiredTrack(filename, tasksEffective);
                     return (
                       <li
                         key={filename}
@@ -500,6 +553,29 @@ export function SavedTracksList({
                             >
                               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                              </svg>
+                            </span>
+                          )}
+                          {uploadExtended && (
+                            <span
+                              className="inline-flex shrink-0 text-teal-400"
+                              title="Upload Extended"
+                              aria-label="Upload Extended"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                              </svg>
+                            </span>
+                          )}
+                          {expired && (
+                            <span
+                              className="inline-flex shrink-0 text-red-400"
+                              title="Expired (older than 14 days)"
+                              aria-label="Expired"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6" />
                               </svg>
                             </span>
                           )}

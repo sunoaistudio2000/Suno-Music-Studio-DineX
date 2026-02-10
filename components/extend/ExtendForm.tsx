@@ -1,26 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import type { StatusState, SavedPersona } from "@/app/types";
-import { IN_PROGRESS_STATUSES } from "@/app/types";
 import { InfoHint } from "@/components/shared/InfoHint";
 import { Toggle } from "@/components/shared/Toggle";
-import { PlusIcon, MinusIcon } from "@/components/shared/FormIcons";
-import { useStatusPolling } from "@/hooks/useStatusPolling";
-import { useModelHighlight } from "@/hooks/useModelHighlight";
-import { usePersonas } from "@/hooks/usePersonas";
-import {
-  MODELS,
-  MODEL_CHAR_LIMITS,
-  MODEL_DESCRIPTIONS,
-  DEFAULTS,
-  clampStep,
-  INPUT_CLASS,
-  SELECT_CLASS,
-  NUMBER_WRAPPER_CLASS,
-  STEPPER_BTN,
-  type ModelKey,
-} from "@/lib/generation-constants";
+import { CustomModeFields } from "@/components/shared/CustomModeFields";
+import { useExtendFormState } from "@/hooks/useExtendFormState";
+import { INPUT_CLASS } from "@/lib/generation-constants";
 
 type ExtendFormProps = {
   statusState: StatusState;
@@ -43,110 +28,49 @@ export function ExtendForm({
   loadTaskId,
   resetKey = 0,
 }: ExtendFormProps) {
-  const [defaultParamFlag, setDefaultParamFlag] = useState(false);
-  const [prompt, setPrompt] = useState("");
-  const [model, setModel] = useState("");
-  const [style, setStyle] = useState("");
-  const [title, setTitle] = useState("");
-  const [continueAt, setContinueAt] = useState<number | "">(60);
-  const [negativeTags, setNegativeTags] = useState("");
-  const [vocalGender, setVocalGender] = useState<"m" | "f" | "d">("m");
-  const [selectedPersonaId, setSelectedPersonaId] = useState("");
-  const [styleWeight, setStyleWeight] = useState(DEFAULTS.styleWeight);
-  const [weirdnessConstraint, setWeirdnessConstraint] = useState(DEFAULTS.weirdnessConstraint);
-  const [audioWeight, setAudioWeight] = useState(DEFAULTS.audioWeight);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { startPolling, stopPolling, setError } = useStatusPolling({ setStatusState });
-  const modelHighlight = useModelHighlight(model);
-  const personas = usePersonas(personasProp);
+  const fs = useExtendFormState({
+    statusState,
+    setStatusState,
+    personas: personasProp,
+    loadTaskId,
+    resetKey,
+  });
 
-  // Reset form when resetKey changes
-  useEffect(() => {
-    if (resetKey === 0) return;
-    setDefaultParamFlag(false);
-    setPrompt("");
-    setModel("");
-    setStyle("");
-    setTitle("");
-    setContinueAt(60);
-    setNegativeTags("");
-    setVocalGender("m");
-    setSelectedPersonaId("");
-    setStyleWeight(DEFAULTS.styleWeight);
-    setWeirdnessConstraint(DEFAULTS.weirdnessConstraint);
-    setAudioWeight(DEFAULTS.audioWeight);
-  }, [resetKey]);
-
-  // Populate form from the selected track's generation data
-  useEffect(() => {
-    if (!loadTaskId?.trim()) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(
-          `/api/generate/generation?taskId=${encodeURIComponent(loadTaskId.trim())}`
-        );
-        const data = await res.json();
-        if (cancelled || !res.ok) return;
-        const g = data?.generation;
-        if (!g || typeof g !== "object") return;
-        setDefaultParamFlag(g.defaultParamFlag === true);
-        setPrompt(typeof g.prompt === "string" ? g.prompt : "");
-        setModel(typeof g.model === "string" && MODELS.includes(g.model) ? g.model : "");
-        setStyle(typeof g.style === "string" ? g.style : "");
-        setTitle(typeof g.title === "string" ? g.title : "");
-        setContinueAt(typeof g.continueAt === "number" && g.continueAt > 0 ? g.continueAt : 60);
-        setNegativeTags(typeof g.negativeTags === "string" ? g.negativeTags : "");
-        setVocalGender(g.vocalGender === "f" ? "f" : g.vocalGender === "d" ? "d" : "m");
-        setSelectedPersonaId(typeof g.personaId === "string" ? g.personaId : "");
-        setStyleWeight(typeof g.styleWeight === "number" ? g.styleWeight : DEFAULTS.styleWeight);
-        setWeirdnessConstraint(
-          typeof g.weirdnessConstraint === "number" ? g.weirdnessConstraint : DEFAULTS.weirdnessConstraint
-        );
-        setAudioWeight(typeof g.audioWeight === "number" ? g.audioWeight : DEFAULTS.audioWeight);
-      } catch {
-        // ignore
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [loadTaskId]);
-
-  const isGenerating =
-    statusState != null && IN_PROGRESS_STATUSES.includes(statusState.status as (typeof IN_PROGRESS_STATUSES)[number]);
-
+  /* ── Validation (matches Generate Music pattern) ── */
   const noAudioSelected = !selectedAudioId?.trim();
-  const missingCustomFields =
-    prompt.trim() === "" || style.trim() === "" || title.trim() === "" || !model || continueAt === "" || Number(continueAt) <= 0;
-  const invalidForm = noAudioSelected || (defaultParamFlag ? missingCustomFields : false);
+  const missingCustomFields = fs.defaultParamFlag
+    ? fs.instrumental
+      ? !fs.style.trim() || !fs.title.trim() || !fs.model || fs.continueAt === "" || Number(fs.continueAt) <= 0
+      : !fs.prompt.trim() || !fs.style.trim() || !fs.title.trim() || !fs.model || fs.continueAt === "" || Number(fs.continueAt) <= 0
+    : fs.prompt.trim() === "";
+  const invalidForm = noAudioSelected || missingCustomFields;
 
-  const charLimits = MODEL_CHAR_LIMITS[model as ModelKey] ?? MODEL_CHAR_LIMITS.V4;
-  const promptLimit = charLimits.prompt;
-
+  /* ── Submit ── */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting || isGenerating || invalidForm) return;
-    setIsSubmitting(true);
+    if (fs.isSubmitting || fs.isGenerating || invalidForm) return;
+    fs.setIsSubmitting(true);
     setStatusState(null);
-    stopPolling();
+    fs.stopPolling();
     try {
       const body: Record<string, unknown> = {
         audioId: selectedAudioId!.trim(),
-        defaultParamFlag,
+        defaultParamFlag: fs.defaultParamFlag,
+        instrumental: fs.instrumental,
       };
-      if (defaultParamFlag) {
-        body.model = model;
-        body.prompt = prompt;
-        body.style = style;
-        body.title = title;
-        body.continueAt = Number(continueAt);
-        if (negativeTags) body.negativeTags = negativeTags;
-        body.vocalGender = vocalGender;
-        if (selectedPersonaId.trim()) body.personaId = selectedPersonaId.trim();
-        body.styleWeight = styleWeight;
-        body.weirdnessConstraint = weirdnessConstraint;
-        body.audioWeight = audioWeight;
+      if (fs.prompt.trim()) body.prompt = fs.prompt.trim();
+
+      if (fs.defaultParamFlag) {
+        body.model = fs.model;
+        body.style = fs.style;
+        body.title = fs.title;
+        body.continueAt = Number(fs.continueAt);
+        if (fs.negativeTags) body.negativeTags = fs.negativeTags;
+        if (!fs.instrumental) body.vocalGender = fs.vocalGender;
+        if (!fs.instrumental && fs.selectedPersonaId.trim()) body.personaId = fs.selectedPersonaId.trim();
+        body.styleWeight = fs.styleWeight;
+        body.weirdnessConstraint = fs.weirdnessConstraint;
+        body.audioWeight = fs.audioWeight;
       }
 
       const res = await fetch("/api/extend", {
@@ -167,19 +91,19 @@ export function ExtendForm({
       }
       const taskId = data.taskId;
       if (!taskId) {
-        setError("No task ID returned");
+        fs.setError("No task ID returned");
         return;
       }
       setStatusState({ taskId, status: "PENDING", tracks: [] });
-      startPolling(taskId);
+      fs.startPolling(taskId);
     } catch (err) {
-      setError((err as Error).message);
+      fs.setError((err as Error).message);
     } finally {
-      setIsSubmitting(false);
+      fs.setIsSubmitting(false);
     }
   };
 
-  const isBusy = isSubmitting || isGenerating;
+  const isBusy = fs.isSubmitting || fs.isGenerating;
 
   return (
     <section
@@ -195,298 +119,56 @@ export function ExtendForm({
       <div className={isBusy ? "pointer-events-none" : ""}>
         <h2 className="mb-4 text-lg font-semibold text-gray-200">Extend Music</h2>
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Default Param Flag toggle */}
-          <div className="flex flex-wrap gap-6">
-            <Toggle label="Use Custom Parameters" on={defaultParamFlag} onChange={setDefaultParamFlag} />
+          {/* ── Prompt (always visible, like Generate Music) ── */}
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm text-gray-400">
+                Prompt{(!fs.defaultParamFlag || !fs.instrumental) && <span className="text-red-500"> *</span>}
+              </label>
+              <InfoHint
+                text="Description of the desired audio extension content"
+                tooltip={`Max ${fs.promptLimit} characters`}
+                id="extend-prompt-limit-tooltip"
+                compact
+                highlighted={fs.modelHighlight}
+              />
+            </div>
+            <textarea
+              value={fs.prompt}
+              onChange={(e) => fs.setPrompt(e.target.value)}
+              rows={6}
+              className={INPUT_CLASS}
+              placeholder="Extend the music with more relaxing notes and a gentle bridge section"
+            />
           </div>
 
-          {defaultParamFlag && (
-            <>
-              {/* Continue At */}
-              <div>
-                <div className="mb-1 flex items-center justify-between">
-                  <label className="text-sm text-gray-400">
-                    Continue At (seconds)<span className="text-red-500"> *</span>
-                  </label>
-                  <InfoHint
-                    text="Time point in source track"
-                    tooltip="The time point (in seconds) from which to start extending the music. Must be greater than 0 and less than the total duration of the source audio."
-                    id="continue-at-tooltip"
-                    tooltipShiftRight={60}
-                  />
-                </div>
-                <input
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={continueAt}
-                  onChange={(e) => setContinueAt(e.target.value === "" ? "" : Number(e.target.value))}
-                  className={INPUT_CLASS}
-                  placeholder="60"
-                />
-              </div>
+          {/* ── Toggles (below prompt, like Generate Music) ── */}
+          <div className="flex flex-wrap gap-6">
+            <Toggle label="Custom Mode" on={fs.defaultParamFlag} onChange={fs.setDefaultParamFlag} />
+          </div>
 
-              {/* Prompt */}
-              <div>
-                <div className="mb-1 flex items-center justify-between">
-                  <label className="text-sm text-gray-400">
-                    Prompt<span className="text-red-500"> *</span>
-                  </label>
-                  <InfoHint
-                    text="Description of the desired audio extension content"
-                    tooltip={`Max ${promptLimit} characters`}
-                    id="extend-prompt-limit-tooltip"
-                    compact
-                    highlighted={modelHighlight}
-                  />
-                </div>
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  rows={6}
-                  className={INPUT_CLASS}
-                  placeholder="Extend the music with more relaxing notes and a gentle bridge section"
-                />
-              </div>
-
-              {/* Model */}
-              <div>
-                <div className="mb-1 flex items-center justify-between">
-                  <label className="text-sm text-gray-400">Model</label>
-                  <span aria-label="Model version">
-                    <InfoHint
-                      text={MODEL_DESCRIPTIONS[model as ModelKey] ?? MODEL_DESCRIPTIONS.V4}
-                      tooltip="Options"
-                      id="extend-model-version-tooltip"
-                      compact
-                    />
-                  </span>
-                </div>
-                <select
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  className={SELECT_CLASS}
-                >
-                  {!model && <option value="">Select model</option>}
-                  {MODELS.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Title */}
-              <div>
-                <div className="mb-1 flex items-center justify-between">
-                  <label className="text-sm text-gray-400">
-                    Title<span className="text-red-500"> *</span>
-                  </label>
-                  <InfoHint
-                    text="Title for the generated music track"
-                    tooltip="Max 80 characters"
-                    id="extend-title-limit-tooltip"
-                    compact
-                  />
-                </div>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className={INPUT_CLASS}
-                  placeholder="Peaceful Piano Extended"
-                />
-              </div>
-
-              {/* Style */}
-              <div>
-                <div className="mb-1 flex items-center justify-between">
-                  <label className="text-sm text-gray-400">
-                    Style<span className="text-red-500"> *</span>
-                  </label>
-                  {charLimits && (
-                    <InfoHint
-                      text="Music style specification for the generated audio"
-                      tooltip={`Max ${charLimits.style} characters`}
-                      id="extend-style-limit-tooltip"
-                      compact
-                      highlighted={modelHighlight}
-                    />
-                  )}
-                </div>
-                <input
-                  type="text"
-                  value={style}
-                  onChange={(e) => setStyle(e.target.value)}
-                  className={INPUT_CLASS}
-                  placeholder="e.g. Classical, Pop, Jazz"
-                />
-              </div>
-
-              {/* Negative Tags */}
-              <div>
-                <div className="mb-1 flex items-center justify-between">
-                  <label className="text-sm text-gray-400">Negative Tags</label>
-                  <InfoHint
-                    text="Exclude styles"
-                    tooltip="Music styles or traits to exclude from the extended audio. Optional."
-                    id="extend-negative-tags-tooltip"
-                    tooltipShiftRight={60}
-                  />
-                </div>
-                <input
-                  type="text"
-                  value={negativeTags}
-                  onChange={(e) => setNegativeTags(e.target.value)}
-                  className={INPUT_CLASS}
-                  placeholder="Heavy Metal, Upbeat Drums"
-                />
-              </div>
-
-              {/* Vocal Gender */}
-              <div>
-                <div className="mb-1 flex items-center justify-between">
-                  <label className="text-sm text-gray-400">Vocal Gender</label>
-                  <InfoHint
-                    text="Only affects vocals"
-                    tooltip="Increases probability of male/female voice; does not guarantee it."
-                    id="extend-vocal-gender-tooltip"
-                    tooltipShiftRight={34}
-                  />
-                </div>
-                <fieldset>
-                  <div className="flex gap-4">
-                    {(["m", "f", "d"] as const).map((g) => (
-                      <label key={g} className="flex cursor-pointer items-center gap-2">
-                        <input
-                          type="radio"
-                          name="extendVocalGender"
-                          checked={vocalGender === g}
-                          onChange={() => setVocalGender(g)}
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm">{g === "m" ? "Male" : g === "f" ? "Female" : "Duet"}</span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              </div>
-
-              {/* Persona */}
-              <div>
-                <div className="mb-1 flex items-center justify-between">
-                  <label className="text-sm text-gray-400">Persona</label>
-                  <InfoHint
-                    text="Apply to the extended music"
-                    tooltip="Use this to apply a specific persona style to your music extension."
-                    id="extend-persona-tooltip"
-                    compact
-                  />
-                </div>
-                <select
-                  value={selectedPersonaId}
-                  onChange={(e) => setSelectedPersonaId(e.target.value)}
-                  className={SELECT_CLASS}
-                  aria-label="Select persona"
-                >
-                  <option value="">No persona</option>
-                  {personas.map((p) => (
-                    <option key={p.personaId} value={p.personaId}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Advanced Controls */}
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  {
-                    label: "Style Weight",
-                    value: styleWeight,
-                    set: setStyleWeight,
-                    tooltip: "Strength of adherence to style. Range 0\u20131, up to 2 decimals.",
-                    tooltipCenter: true,
-                  },
-                  {
-                    label: "Weirdness",
-                    value: weirdnessConstraint,
-                    set: setWeirdnessConstraint,
-                    tooltip: "Controls creative deviation. Range 0\u20131, up to 2 decimals.",
-                    tooltipCenter: true,
-                  },
-                  {
-                    label: "Audio Weight",
-                    value: audioWeight,
-                    set: setAudioWeight,
-                    tooltip: "Balance weight for audio features. Range 0\u20131, up to 2 decimals.",
-                    tooltipCenter: true,
-                  },
-                ].map(({ label, value, set, tooltip, tooltipCenter }) => (
-                  <div key={label}>
-                    <div className="mb-1 flex items-center gap-0.5">
-                      <label className="text-sm text-gray-400">{label}</label>
-                      {tooltip && (
-                        <InfoHint
-                          text=""
-                          tooltip={tooltip}
-                          id={`extend-${label.toLowerCase().replace(/\s+/g, "-")}-tooltip`}
-                          compact={false}
-                          tooltipCenter={tooltipCenter}
-                        />
-                      )}
-                    </div>
-                    <div className={NUMBER_WRAPPER_CLASS}>
-                      <input
-                        type="number"
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={value}
-                        onChange={(e) => set(Number(e.target.value))}
-                        className="w-full min-w-0 rounded-l-lg border-0 bg-transparent px-3 py-2 text-[#f5f5f5] focus:outline-none"
-                      />
-                      <div className="flex flex-col border-l border-[#2a2a2a]">
-                        <button
-                          type="button"
-                          tabIndex={-1}
-                          onClick={() => set((v) => clampStep(v, 0.01))}
-                          className={`${STEPPER_BTN} rounded-tr-lg`}
-                          aria-label="Increase"
-                        >
-                          <PlusIcon />
-                        </button>
-                        <button
-                          type="button"
-                          tabIndex={-1}
-                          onClick={() => set((v) => clampStep(v, -0.01))}
-                          className={`${STEPPER_BTN} rounded-br-lg`}
-                          aria-label="Decrease"
-                        >
-                          <MinusIcon />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
+          {fs.defaultParamFlag && (
+            <CustomModeFields
+              fs={fs}
+              idPrefix="extend"
+              radioGroupName="extendVocalGender"
+            />
           )}
 
           {/* Submit */}
           <div className="flex justify-end">
             <button
               type="submit"
-              disabled={isSubmitting || isGenerating || invalidForm}
+              disabled={fs.isSubmitting || fs.isGenerating || invalidForm}
               className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50"
             >
-              {isSubmitting || isGenerating ? (
+              {fs.isSubmitting || fs.isGenerating ? (
                 <>
                   <span
                     className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[#2a2a2a] border-t-white"
                     aria-hidden
                   />
-                  {isSubmitting ? "Starting\u2026" : "Extending\u2026"}
+                  {fs.isSubmitting ? "Starting\u2026" : "Extending\u2026"}
                 </>
               ) : (
                 <>

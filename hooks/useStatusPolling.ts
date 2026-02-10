@@ -14,6 +14,8 @@ type UseStatusPollingOptions = {
  */
 export function useStatusPolling({ setStatusState }: UseStatusPollingOptions) {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** When set, overrides the KIE-returned track title when saving (e.g. uploaded source filename). */
+  const trackTitleOverrideRef = useRef<string | null>(null);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -72,12 +74,17 @@ export function useStatusPolling({ setStatusState }: UseStatusPollingOptions) {
         });
         if (isSuccessStatus && tracks.length > 0) {
           try {
+            const override = trackTitleOverrideRef.current;
             await fetch("/api/audio/save", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 taskId,
-                tracks: tracks.map((t) => ({ id: t.id, audioUrl: t.audioUrl, title: t.title })),
+                tracks: tracks.map((t) => ({
+                  id: t.id,
+                  audioUrl: t.audioUrl,
+                  title: override || t.title,
+                })),
               }),
             });
             if (typeof window !== "undefined") {
@@ -108,5 +115,9 @@ export function useStatusPolling({ setStatusState }: UseStatusPollingOptions) {
     [pollStatus, stopPolling]
   );
 
-  return { pollStatus, startPolling, stopPolling, setError, pollRef };
+  const setTrackTitleOverride = useCallback((title: string | null) => {
+    trackTitleOverrideRef.current = title;
+  }, []);
+
+  return { pollStatus, startPolling, stopPolling, setError, pollRef, setTrackTitleOverride };
 }
