@@ -12,6 +12,8 @@ const FILE_UPLOAD_URL = "https://kieai.redpandaai.co/api/file-stream-upload";
  * Accepts either:
  *   - A file via multipart/form-data (field "file")
  *   - A local filename via form field "localFilename" (reads from audio/ folder on server)
+ *
+ * Used by both Upload & Extend and Upload & Cover.
  */
 export async function POST(request: NextRequest) {
   const token = await getToken({

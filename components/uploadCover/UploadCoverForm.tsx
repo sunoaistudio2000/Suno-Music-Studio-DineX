@@ -10,7 +10,7 @@ import { useExtendFormState } from "@/hooks/useExtendFormState";
 import { useUploadSource } from "@/hooks/useUploadSource";
 import { INPUT_CLASS } from "@/lib/generation-constants";
 
-type UploadExtendFormProps = {
+type UploadCoverFormProps = {
   statusState: StatusState;
   setStatusState: (state: StatusState) => void;
   /** Filename of the track selected in the Suno Audio Panel (e.g. taskId-1-title.mp3). */
@@ -29,7 +29,7 @@ type UploadExtendFormProps = {
 const BTN_CLASS =
   "flex items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:border-blue-600/50 hover:bg-blue-950/30 hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#1a1a1a] disabled:opacity-50";
 
-export function UploadExtendForm({
+export function UploadCoverForm({
   statusState,
   setStatusState,
   selectedTrackFilename,
@@ -38,7 +38,7 @@ export function UploadExtendForm({
   personas: personasProp,
   loadTaskId,
   resetKey = 0,
-}: UploadExtendFormProps) {
+}: UploadCoverFormProps) {
   const fs = useExtendFormState({
     statusState,
     setStatusState,
@@ -53,22 +53,8 @@ export function UploadExtendForm({
     onClearSelection,
     onClearSource: () => fs.setTrackTitleOverride(null),
     resetKey,
-    onUploadSuccess: async ({ url, titleForSave }) => {
+    onUploadSuccess: ({ titleForSave }) => {
       fs.setTrackTitleOverride(titleForSave.replace(/\s+/g, "_"));
-      try {
-        const audio = new Audio();
-        audio.preload = "metadata";
-        await new Promise<void>((resolve, reject) => {
-          audio.onloadedmetadata = () => resolve();
-          audio.onerror = () => reject(new Error("Could not load audio metadata"));
-          audio.src = url;
-        });
-        if (audio.duration && isFinite(audio.duration)) {
-          fs.setContinueAt(Math.round(audio.duration));
-        }
-      } catch {
-        // Ignore – continueAt keeps its current value
-      }
     },
     resetForm: fs.resetToDefaults,
   });
@@ -76,12 +62,11 @@ export function UploadExtendForm({
   const noUploadUrl = !upload.uploadedUrl;
   const missingCustomFields = fs.defaultParamFlag
     ? fs.instrumental
-      ? !fs.style.trim() || !fs.title.trim() || !fs.model || fs.continueAt === "" || Number(fs.continueAt) <= 0
-      : !fs.prompt.trim() || !fs.style.trim() || !fs.title.trim() || !fs.model || fs.continueAt === "" || Number(fs.continueAt) <= 0
+      ? !fs.style.trim() || !fs.title.trim() || !fs.model
+      : !fs.prompt.trim() || !fs.style.trim() || !fs.title.trim() || !fs.model
     : false;
   const invalidForm = noUploadUrl || missingCustomFields;
 
-  /* ── Submit ── */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (fs.isSubmitting || fs.isGenerating || invalidForm) return;
@@ -91,10 +76,9 @@ export function UploadExtendForm({
     try {
       const body: Record<string, unknown> = {
         uploadUrl: upload.uploadedUrl!,
-        defaultParamFlag: fs.defaultParamFlag,
+        customMode: fs.defaultParamFlag,
         instrumental: fs.instrumental,
         model: fs.model || "V4",
-        continueAt: Number(fs.continueAt) || undefined,
       };
       if (fs.prompt.trim()) body.prompt = fs.prompt.trim();
 
@@ -109,7 +93,7 @@ export function UploadExtendForm({
         body.audioWeight = fs.audioWeight;
       }
 
-      const res = await fetch("/api/uploadExtend", {
+      const res = await fetch("/api/uploadCover", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -119,9 +103,9 @@ export function UploadExtendForm({
         const credits = res.status === 402 || data.code === 402;
         const fallback = credits
           ? "Your balance isn't enough to run this request. Please top up to continue."
-          : "Upload extension failed";
+          : "Upload cover failed";
         const displayMessage = data.error ?? data.message ?? data.msg ?? fallback;
-        const msg = typeof displayMessage === "string" ? displayMessage : "Upload extension failed";
+        const msg = typeof displayMessage === "string" ? displayMessage : "Upload cover failed";
         setStatusState({ taskId: "", status: "ERROR", tracks: [], error: msg });
         return;
       }
@@ -153,7 +137,7 @@ export function UploadExtendForm({
         />
       )}
       <div className={isBusy ? "pointer-events-none" : ""}>
-        <h2 className="mb-4 text-lg font-semibold text-gray-200">Upload &amp; Extend Music</h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-200">Upload &amp; Cover Music</h2>
         <form onSubmit={handleSubmit} className="space-y-5">
 
           {/* ── Audio Source ── */}
@@ -163,14 +147,13 @@ export function UploadExtendForm({
                 Audio Source<span className="text-red-500"> *</span>
               </label>
               <InfoHint
-                text="Upload then extend"
-                tooltip="Choose an MP3 file or select a saved track, then click Upload to send it to the server. The Extend button is enabled only after a successful upload."
-                id="upload-extend-source-tooltip"
+                text="Upload then cover"
+                tooltip="Choose an MP3 file or select a saved track, then click Upload to send it to the server. The Cover button is enabled only after a successful upload."
+                id="upload-cover-source-tooltip"
                 tooltipShiftRight={60}
               />
             </div>
 
-            {/* Step 1: Pick source */}
             <div className="flex items-center gap-3">
               <input
                 ref={upload.fileInputRef}
@@ -178,7 +161,7 @@ export function UploadExtendForm({
                 accept=".mp3,audio/mpeg"
                 onChange={upload.handleFileChange}
                 className="hidden"
-                id="upload-extend-file-input"
+                id="upload-cover-file-input"
               />
               <button
                 type="button"
@@ -203,7 +186,6 @@ export function UploadExtendForm({
               )}
             </div>
 
-            {/* Selected source indicator */}
             {upload.hasPickedSource && !upload.hasUploaded && !upload.isUploading && (
               <div className="mt-3 rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-3">
                 <div className="flex items-center justify-between">
@@ -228,7 +210,6 @@ export function UploadExtendForm({
               </div>
             )}
 
-            {/* Uploading spinner */}
             {upload.isUploading && (
               <div className="mt-3 flex items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-3 text-sm text-gray-400">
                 <span
@@ -239,12 +220,10 @@ export function UploadExtendForm({
               </div>
             )}
 
-            {/* Upload error */}
             {upload.uploadError && (
               <p className="mt-2 text-sm text-red-400">{upload.uploadError}</p>
             )}
 
-            {/* Step 2 result: Uploaded file preview */}
             {upload.hasUploaded && !upload.isUploading && (
               <div className="mt-3 rounded-lg border border-green-900/50 bg-[#0f0f0f] p-3">
                 <div className="mb-2 flex items-center gap-2 text-sm">
@@ -273,7 +252,6 @@ export function UploadExtendForm({
               </div>
             )}
 
-            {/* Hint when no source */}
             {!upload.hasPickedSource && !upload.hasUploaded && !upload.isUploading && (
               <p className="mt-2 text-xs text-gray-500">
                 Choose an MP3 file or select a track from the Suno Audio Folder above, then click Upload.
@@ -281,16 +259,16 @@ export function UploadExtendForm({
             )}
           </div>
 
-          {/* ── Prompt (always visible, above toggles like Generate Music) ── */}
+          {/* ── Prompt ── */}
           <div>
             <div className="mb-1 flex items-center justify-between">
               <label className="text-sm text-gray-400">
                 Prompt{(!fs.defaultParamFlag || !fs.instrumental) && <span className="text-red-500"> *</span>}
               </label>
               <InfoHint
-                text="Description of the desired extension"
+                text="Description of the desired style"
                 tooltip={`Max ${fs.promptLimit} characters`}
-                id="upload-extend-prompt-limit-tooltip"
+                id="upload-cover-prompt-limit-tooltip"
                 compact
                 highlighted={fs.modelHighlight}
               />
@@ -300,22 +278,23 @@ export function UploadExtendForm({
               onChange={(e) => fs.setPrompt(e.target.value)}
               rows={6}
               className={INPUT_CLASS}
-              placeholder="Extend the music with more relaxing notes and a gentle bridge section"
+              placeholder="Transform the music into a new style while keeping the melody. Describe the desired genre, instruments, or mood."
             />
           </div>
 
-          {/* ── Toggles (below prompt, like Generate Music) ── */}
+          {/* ── Toggles ── */}
           <div className="flex flex-wrap gap-6">
             <Toggle label="Custom Mode" on={fs.defaultParamFlag} onChange={fs.setDefaultParamFlag} />
             <Toggle label="Instrumental" on={fs.instrumental} onChange={fs.setInstrumental} />
           </div>
 
-          {/* ── Custom Mode fields ── */}
+          {/* ── Custom Mode fields (no Continue At) ── */}
           {fs.defaultParamFlag && (
             <CustomModeFields
               fs={fs}
-              idPrefix="upload-extend"
-              radioGroupName="uploadExtendVocalGender"
+              idPrefix="upload-cover"
+              radioGroupName="uploadCoverVocalGender"
+              showContinueAt={false}
             />
           )}
 
@@ -332,21 +311,20 @@ export function UploadExtendForm({
                     className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[#2a2a2a] border-t-white"
                     aria-hidden
                   />
-                  {fs.isSubmitting ? "Starting\u2026" : "Extending\u2026"}
+                  {fs.isSubmitting ? "Starting\u2026" : "Covering\u2026"}
                 </>
               ) : (
                 <>
                   <svg
                     className="h-5 w-5 shrink-0"
-                    fill="currentColor"
-                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                     aria-hidden
                   >
-                    <path d="M9 13c0 1.105-1.12 2-2.5 2S4 14.105 4 13s1.12-2 2.5-2 2.5.895 2.5 2z" />
-                    <path fillRule="evenodd" d="M9 3v10H8V3z" />
-                    <path d="M8 2.82a1 1 0 0 1 .804-.98l3-.6A1 1 0 0 1 13 2.22V4L8 5V2.82z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                   </svg>
-                  Extend
+                  Cover
                 </>
               )}
             </button>
@@ -359,7 +337,7 @@ export function UploadExtendForm({
         onClose={upload.handleCloseDeleteConfirm}
         onConfirm={upload.handleConfirmDelete}
         title="Remove Uploaded File"
-        message="Are you sure you want to remove the uploaded file? You will need to upload again to extend."
+        message="Are you sure you want to remove the uploaded file? You will need to upload again to cover."
         confirmLabel="Remove"
         cancelLabel="Cancel"
         variant="danger"

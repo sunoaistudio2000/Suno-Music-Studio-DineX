@@ -1,0 +1,47 @@
+Title: Redemption Road
+
+Promot:
+
+[Intro: Upright bass walk-in, soft brushed drums, warm jazz piano chords]
+[Spoken: Calm, intimate baritone, close-mic]
+The road is the same…
+Just told in a different language.
+
+[Verse: Laid-back jazz phrasing, behind-the-beat delivery]
+Smooth, conversational vocal phrasing with expressive timing
+Lyrics delivered with space and swing, emphasizing storytelling
+Melodic improvisation at line endings, subtle blue notes
+
+[Chorus: Soulful jazz harmony, restrained and emotional]
+Warm vocal harmonies, gentle rise and fall
+No big hooks, focus on feeling and phrasing
+Emotional clarity over volume
+
+[Instrumental Break: Jazz trio improvisation]
+Piano comping with tasteful runs
+Upright bass walking steadily
+Brush drums with light accents
+
+[Bridge: Spoken-sung jazz monologue feel]
+Reflective, intimate delivery
+Minimal instrumentation, lots of air and reverb
+
+[Final Chorus: Soft lift, emotional resolution]
+Slight harmonic expansion
+Vocals remain relaxed and human
+
+[Outro: Piano and bass fade, tape warmth]
+The road continues… quietly.
+
+Style: 72–76 BPM Roots Reggae evolving into conscious reggae-rap, one-drop foundation with subtle boom-bap influence, warm bass, organ accents, dub space, soulful baritone with rhythmic rap delivery.
+
+Negative Tags: Trap, Drill, Aggressive rap, Auto-tune, EDM, Pop hooks, High-energy club beats, Metal, Distorted guitars.
+Vocal Gender: Male
+
+Model: V5
+
+Style Weight	0.65
+
+Weirdness	0.30	
+
+Audio Weight	0.35

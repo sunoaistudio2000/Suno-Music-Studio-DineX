@@ -8,16 +8,18 @@ import { GenerateForm } from "@/components/generate/GenerateForm";
 import { GenerationStatus } from "@/components/generate/GenerationStatus";
 import { ExtendSection } from "@/components/extend/ExtendSection";
 import { UploadExtendSection } from "@/components/uploadExtend/UploadExtendSection";
+import { UploadCoverSection } from "@/components/uploadCover/UploadCoverSection";
 import { CreatePersonaSection } from "@/components/persona/CreatePersonaSection";
 import { PersonasList } from "@/components/persona/PersonasList";
 import { AppTitleWithLogo } from "@/components/shared/AppTitle";
 
-export type AppMode = "generate" | "extend" | "uploadExtend" | "persona";
+export type AppMode = "generate" | "extend" | "uploadExtend" | "uploadCover" | "persona";
 
 const MODE_OPTIONS: { value: AppMode; label: string }[] = [
   { value: "generate", label: "Generate Music" },
   { value: "extend", label: "Extend Music" },
   { value: "uploadExtend", label: "Upload & Extend Music" },
+  { value: "uploadCover", label: "Upload & Cover Music" },
   { value: "persona", label: "Generate Persona" },
 ];
 
@@ -53,6 +55,9 @@ export default function Home() {
 
   const [uploadExtendStatusState, setUploadExtendStatusState] = useState<StatusState>(null);
   const [uploadExtendResetKey, setUploadExtendResetKey] = useState(0);
+
+  const [uploadCoverStatusState, setUploadCoverStatusState] = useState<StatusState>(null);
+  const [uploadCoverResetKey, setUploadCoverResetKey] = useState(0);
 
   const handleNewGeneration = useCallback(() => {
     // Stop all playing audio and reset to start
@@ -94,12 +99,11 @@ export default function Home() {
 
   const extendAudioId = resolveAudioId(mode === "extend" ? selectedAudioFilename : null);
 
-  // Resolve display name for the selected track in upload-extend mode
-  const uploadExtendTrackName = (() => {
-    if (mode !== "uploadExtend" || !selectedAudioFilename) return null;
-    const parsed = parseSavedFilename(selectedAudioFilename);
-    return parsed?.title ?? selectedAudioFilename;
-  })();
+  // Resolve display name for selected track (upload-extend and upload-cover)
+  const selectedTrackDisplayName =
+    (mode === "uploadExtend" || mode === "uploadCover") && selectedAudioFilename
+      ? parseSavedFilename(selectedAudioFilename)?.title ?? selectedAudioFilename
+      : null;
 
   const fetchPersonaData = useCallback(async () => {
     setPersonaDataLoading(true);
@@ -239,14 +243,15 @@ export default function Home() {
             mode === "persona" ? "persona"
               : mode === "extend" ? "extend"
                 : mode === "uploadExtend" ? "uploadExtend"
-                  : undefined
+                  : mode === "uploadCover" ? "uploadCover"
+                    : undefined
           }
           personaMetadata={personaTasks}
           personas={personaList}
           showLoadFormRadio={mode === "generate"}
           selectedLoadFormFilename={mode === "generate" ? loadFormSelectedFilename : null}
           onSelectLoadFormFilename={mode === "generate" ? setLoadFormSelectedFilename : undefined}
-          showSearch={mode === "generate" || mode === "persona" || mode === "extend" || mode === "uploadExtend"}
+          showSearch={mode === "generate" || mode === "persona" || mode === "extend" || mode === "uploadExtend" || mode === "uploadCover"}
           onNewGeneration={
             mode === "generate"
               ? handleNewGeneration
@@ -290,11 +295,23 @@ export default function Home() {
             statusState={uploadExtendStatusState}
             setStatusState={setUploadExtendStatusState}
             selectedTrackFilename={selectedAudioFilename}
-            selectedTrackName={uploadExtendTrackName}
+            selectedTrackName={selectedTrackDisplayName}
             onClearSelection={() => setSelectedAudioFilename(null)}
             loadTaskId={selectedAudioFilename ? parseSavedFilename(selectedAudioFilename)?.taskId ?? null : null}
             personas={personaList}
             resetKey={uploadExtendResetKey}
+          />
+        </div>
+        <div className={mode === "uploadCover" ? "" : "hidden"}>
+          <UploadCoverSection
+            statusState={uploadCoverStatusState}
+            setStatusState={setUploadCoverStatusState}
+            selectedTrackFilename={selectedAudioFilename}
+            selectedTrackName={selectedTrackDisplayName}
+            onClearSelection={() => setSelectedAudioFilename(null)}
+            loadTaskId={selectedAudioFilename ? parseSavedFilename(selectedAudioFilename)?.taskId ?? null : null}
+            personas={personaList}
+            resetKey={uploadCoverResetKey}
           />
         </div>
         {mode === "persona" && (

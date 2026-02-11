@@ -15,6 +15,9 @@ We implemented music extension in [kie.ai](https://kie.ai/) to allow generated t
 #### 🎶 Upload & Extend Music
 We’ve added a new feature that lets you upload your own MP3 tracks and extend them directly from the server. The process uses an upload step followed by an extend step, with files hosted temporarily on the [kie.ai](https://kie.ai/)  server. This is especially useful for tracks that may no longer exist on the main server after 14 days, as your uploaded files remain accessible for extension unless manually deleted. By adjusting prompt, style, and weights, you can create creative extensions while keeping the core identity of your track intact.
 
+#### 🎶 Upload & Cover Music
+We’ve added a new feature that lets you upload your own MP3 tracks and cover them in a new style directly on the server. The process uses an upload step followed by a cover step, with files hosted temporarily on the [kie.ai](https://kie.ai/) server. Even if you modify the prompt and adjust the style, the cover preserves the track’s original melody and musical “DNA,” keeping its core identity intact while creating a fresh, stylistically transformed version.
+
 #### 👉 Links & Resources
 
 - [Suno](https://suno.com/)  
@@ -54,5 +57,7 @@ npm run dev
 📺 **Video:(Extending Music)** [Watch on YouTube](https://youtu.be/fonbDowlX2w) 
 
 📺 **Video:(Upload & Extend Music)** [Watch on YouTube](https://youtu.be/oLdW8281ykk) 
+
+📺 **Video:(Upload & Cover Music)** [Watch on YouTube](https://youtu.be/hFt9BumMNps) 
 
 
