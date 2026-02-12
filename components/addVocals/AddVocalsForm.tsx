@@ -1,0 +1,498 @@
+"use client";
+
+import type { StatusState } from "@/app/types";
+import { InfoHint } from "@/components/shared/InfoHint";
+import { StyledAudioPlayer } from "@/components/StyledAudioPlayer";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { useAddVocalsFormState, ADD_VOCALS_MODELS } from "@/hooks/useAddVocalsFormState";
+import { useUploadSource } from "@/hooks/useUploadSource";
+import { INPUT_CLASS, SELECT_CLASS, NUMBER_WRAPPER_CLASS, STEPPER_BTN, clampStep, MODEL_DESCRIPTIONS, type ModelKey } from "@/lib/generation-constants";
+import { PlusIcon, MinusIcon } from "@/components/shared/FormIcons";
+
+type AddVocalsFormProps = {
+  statusState: StatusState;
+  setStatusState: (state: StatusState) => void;
+  selectedTrackFilename?: string | null;
+  selectedTrackName?: string | null;
+  onClearSelection?: () => void;
+  loadTaskId?: string | null;
+  resetKey?: number;
+};
+
+const BTN_CLASS =
+  "flex items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:border-blue-600/50 hover:bg-blue-950/30 hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#1a1a1a] disabled:opacity-50";
+
+export function AddVocalsForm({
+  statusState,
+  setStatusState,
+  selectedTrackFilename,
+  selectedTrackName,
+  onClearSelection,
+  loadTaskId,
+  resetKey = 0,
+}: AddVocalsFormProps) {
+  const fs = useAddVocalsFormState({
+    statusState,
+    setStatusState,
+    loadTaskId,
+    resetKey,
+  });
+
+  const upload = useUploadSource({
+    selectedTrackFilename,
+    selectedTrackName,
+    onClearSelection,
+    onClearSource: () => fs.setTrackTitleOverride(null),
+    resetKey,
+    onUploadSuccess: ({ titleForSave }) => {
+      fs.setTrackTitleOverride(titleForSave.replace(/\s+/g, "_"));
+    },
+    resetForm: fs.resetToDefaults,
+  });
+
+  const noUploadUrl = !upload.uploadedUrl;
+  const invalidForm =
+    noUploadUrl ||
+    !fs.title.trim() ||
+    !fs.prompt.trim() ||
+    !fs.style.trim() ||
+    !fs.negativeTags.trim();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (fs.isSubmitting || fs.isGenerating || invalidForm) return;
+    fs.setIsSubmitting(true);
+    setStatusState(null);
+    fs.stopPolling();
+    try {
+      const res = await fetch("/api/addVocals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uploadUrl: upload.uploadedUrl!,
+          title: fs.title.trim(),
+          prompt: fs.prompt.trim(),
+          style: fs.style.trim(),
+          negativeTags: fs.negativeTags.trim(),
+          model: fs.model,
+          vocalGender: fs.vocalGender,
+          styleWeight: fs.styleWeight,
+          weirdnessConstraint: fs.weirdnessConstraint,
+          audioWeight: fs.audioWeight,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const credits = res.status === 402 || data.code === 402;
+        const fallback = credits
+          ? "Your balance isn't enough to run this request. Please top up to continue."
+          : "Add vocals failed";
+        const displayMessage = data.error ?? data.message ?? data.msg ?? fallback;
+        const msg =
+          typeof displayMessage === "string" ? displayMessage : "Add vocals failed";
+        setStatusState({ taskId: "", status: "ERROR", tracks: [], error: msg });
+        return;
+      }
+      const taskId = data.taskId;
+      if (!taskId) {
+        fs.setError("No task ID returned");
+        return;
+      }
+      setStatusState({ taskId, status: "PENDING", tracks: [] });
+      fs.startPolling(taskId);
+    } catch (err) {
+      fs.setError((err as Error).message);
+    } finally {
+      fs.setIsSubmitting(false);
+    }
+  };
+
+  const isBusy = fs.isSubmitting || fs.isGenerating;
+
+  return (
+    <section
+      className={`relative mb-10 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-6 ${isBusy ? "select-none opacity-90" : ""}`}
+      aria-busy={isBusy}
+    >
+      {isBusy && (
+        <div
+          className="absolute inset-0 z-10 cursor-not-allowed rounded-xl"
+          aria-hidden
+        />
+      )}
+      <div className={isBusy ? "pointer-events-none" : ""}>
+        <h2 className="mb-4 text-lg font-semibold text-gray-200">
+          Add Vocals
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* ── Audio Source ── */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-300">
+                Audio Source<span className="text-red-500"> *</span>
+              </label>
+              <InfoHint
+                text="Upload instrumental"
+                tooltip="Choose an MP3 file (instrumental) or select a saved track, then click Upload. The Add Vocals button is enabled only after a successful upload."
+                id="add-vocals-source-tooltip"
+                compact
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                ref={upload.fileInputRef}
+                type="file"
+                accept=".mp3,audio/mpeg"
+                onChange={upload.handleFileChange}
+                className="hidden"
+                id="add-vocals-file-input"
+              />
+              <button
+                type="button"
+                onClick={() => upload.fileInputRef.current?.click()}
+                disabled={upload.isUploading}
+                className={BTN_CLASS}
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+                </svg>
+                Choose File
+              </button>
+              {(upload.hasPickedSource || upload.hasUploaded) && (
+                <button
+                  type="button"
+                  onClick={upload.handleClearSource}
+                  className="text-sm text-gray-500 hover:text-red-400"
+                  title="Clear audio source"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            {upload.hasPickedSource && !upload.hasUploaded && !upload.isUploading && (
+              <div className="mt-3 rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="h-4 w-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                    </svg>
+                    <span className="text-gray-300">{upload.pickedSourceName}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={upload.handleUpload}
+                    disabled={upload.isUploading}
+                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#0f0f0f] disabled:opacity-50"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Upload
+                  </button>
+                </div>
+              </div>
+            )}
+            {upload.isUploading && (
+              <div className="mt-3 flex items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-3 text-sm text-gray-400">
+                <span
+                  className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[#2a2a2a] border-t-blue-500"
+                  aria-hidden
+                />
+                Uploading…
+              </div>
+            )}
+            {upload.uploadError && (
+              <p className="mt-2 text-sm text-red-400">{upload.uploadError}</p>
+            )}
+            {upload.hasUploaded && !upload.isUploading && (
+              <div className="mt-3 rounded-lg border border-green-900/50 bg-[#0f0f0f] p-3">
+                <div className="mb-2 flex items-center gap-2 text-sm">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-green-500" aria-hidden />
+                  <span className="text-green-400">Uploaded: {upload.uploadedFileName}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <StyledAudioPlayer
+                    className="min-w-[280px] flex-1"
+                    src={upload.uploadedUrl!}
+                    preload="metadata"
+                    aria-label={`Preview ${upload.uploadedFileName ?? "uploaded file"}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={upload.handleDeleteUploaded}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-red-900/50 bg-red-950/30 text-red-400 transition-colors hover:border-red-600/50 hover:bg-red-950/50 hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-[#0f0f0f]"
+                    title="Remove uploaded file"
+                    aria-label="Remove uploaded file"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+            {!upload.hasPickedSource && !upload.hasUploaded && !upload.isUploading && (
+              <p className="mt-2 text-xs text-gray-500">
+                Choose an MP3 file (instrumental) or select a track from the Suno Audio Folder above, then click Upload.
+              </p>
+            )}
+          </div>
+
+          {/* ── Prompt ── */}
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm text-gray-400">
+                Prompt<span className="text-red-500"> *</span>
+              </label>
+              <InfoHint
+                text="Lyric content and singing style"
+                tooltip="Define the lyric content and singing style for the AI-generated vocals."
+                id="add-vocals-prompt-tooltip"
+                compact
+              />
+            </div>
+            <textarea
+              value={fs.prompt}
+              onChange={(e) => fs.setPrompt(e.target.value)}
+              rows={6}
+              className={INPUT_CLASS}
+              placeholder="[Verse] Calm piano melody, soft and soothing"
+            />
+          </div>
+
+          {/* ── Model ── */}
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm text-gray-400">Model</label>
+              <span aria-label="Model version">
+                <InfoHint
+                  text={MODEL_DESCRIPTIONS[fs.model as ModelKey] ?? MODEL_DESCRIPTIONS.V4_5PLUS}
+                  tooltip="Options"
+                  id="add-vocals-model-tooltip"
+                  compact
+                />
+              </span>
+            </div>
+            <select
+              value={fs.model}
+              onChange={(e) => fs.setModel(e.target.value as typeof fs.model)}
+              className={SELECT_CLASS}
+            >
+              {ADD_VOCALS_MODELS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* ── Title ── */}
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm text-gray-400">
+                Title<span className="text-red-500"> *</span>
+              </label>
+              <InfoHint
+                text="Title for the generated music track"
+                tooltip="Max 80 characters"
+                id="add-vocals-title-tooltip"
+                compact
+              />
+            </div>
+            <input
+              type="text"
+              value={fs.title}
+              onChange={(e) => fs.setTitle(e.target.value)}
+              className={INPUT_CLASS}
+              placeholder="Calm Piano Vocals"
+            />
+          </div>
+
+          {/* ── Style ── */}
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm text-gray-400">
+                Style<span className="text-red-500"> *</span>
+              </label>
+              <InfoHint
+                text="Music style for the vocals"
+                tooltip="e.g. Jazz, electronic, classical"
+                id="add-vocals-style-tooltip"
+                compact
+              />
+            </div>
+            <input
+              type="text"
+              value={fs.style}
+              onChange={(e) => fs.setStyle(e.target.value)}
+              className={INPUT_CLASS}
+              placeholder="Jazz"
+            />
+          </div>
+
+          {/* ── Negative Tags ── */}
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm text-gray-400">
+                Negative Tags<span className="text-red-500"> *</span>
+              </label>
+              <InfoHint
+                text="Exclude styles"
+                tooltip="Music styles or traits to exclude from the generated vocals."
+                id="add-vocals-negative-tags-tooltip"
+                tooltipShiftRight={60}
+              />
+            </div>
+            <input
+              type="text"
+              value={fs.negativeTags}
+              onChange={(e) => fs.setNegativeTags(e.target.value)}
+              className={INPUT_CLASS}
+              placeholder="heavy metal, strong drums"
+            />
+          </div>
+
+          {/* ── Vocal Gender ── */}
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm text-gray-400">Vocal Gender</label>
+              <InfoHint
+                text="Only affects vocals"
+                tooltip="Increases probability of male/female/duet; does not guarantee it."
+                id="add-vocals-vocal-gender-tooltip"
+                tooltipShiftRight={34}
+              />
+            </div>
+            <fieldset>
+              <div className="flex gap-4">
+                {(["m", "f", "d"] as const).map((g) => (
+                  <label key={g} className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="radio"
+                      name="addVocalsVocalGender"
+                      checked={fs.vocalGender === g}
+                      onChange={() => fs.setVocalGender(g)}
+                      className="text-blue-600"
+                    />
+                    <span className="text-sm">{g === "m" ? "Male" : g === "f" ? "Female" : "Duet"}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </div>
+
+          {/* ── Weights ── */}
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              {
+                label: "Style Weight",
+                value: fs.styleWeight,
+                set: fs.setStyleWeight,
+                tooltip: "Strength of adherence to style. Range 0–1, up to 2 decimals.",
+              },
+              {
+                label: "Weirdness",
+                value: fs.weirdnessConstraint,
+                set: fs.setWeirdnessConstraint,
+                tooltip: "Controls creative deviation. Range 0–1, up to 2 decimals.",
+              },
+              {
+                label: "Audio Weight",
+                value: fs.audioWeight,
+                set: fs.setAudioWeight,
+                tooltip: "Balance weight for audio features. Range 0–1, up to 2 decimals.",
+              },
+            ].map(({ label, value, set, tooltip }) => (
+              <div key={label}>
+                <div className="mb-1 flex items-center gap-0.5">
+                  <label className="text-sm text-gray-400">{label}</label>
+                  <InfoHint
+                    text=""
+                    tooltip={tooltip}
+                    id={`add-vocals-${label.toLowerCase().replace(/\s+/g, "-")}-tooltip`}
+                    compact={false}
+                    tooltipCenter
+                  />
+                </div>
+                <div className={NUMBER_WRAPPER_CLASS}>
+                  <input
+                    type="number"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={value}
+                    onChange={(e) => set(Number(e.target.value))}
+                    className="w-full min-w-0 rounded-l-lg border-0 bg-transparent px-3 py-2 text-[#f5f5f5] focus:outline-none"
+                  />
+                  <div className="flex flex-col border-l border-[#2a2a2a]">
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => set((v) => clampStep(v, 0.01))}
+                      className={`${STEPPER_BTN} rounded-tr-lg`}
+                      aria-label="Increase"
+                    >
+                      <PlusIcon />
+                    </button>
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => set((v) => clampStep(v, -0.01))}
+                      className={`${STEPPER_BTN} rounded-br-lg`}
+                      aria-label="Decrease"
+                    >
+                      <MinusIcon />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Submit */}
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={fs.isSubmitting || fs.isGenerating || invalidForm}
+              className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50"
+            >
+              {fs.isSubmitting || fs.isGenerating ? (
+                <>
+                  <span
+                    className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[#2a2a2a] border-t-white"
+                    aria-hidden
+                  />
+                  {fs.isSubmitting ? "Starting…" : "Adding Vocals…"}
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="h-5 w-5 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Vocals
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <ConfirmDialog
+        open={upload.showDeleteConfirm}
+        onClose={upload.handleCloseDeleteConfirm}
+        onConfirm={upload.handleConfirmDelete}
+        title="Remove Uploaded File"
+        message="Are you sure you want to remove the uploaded file? You will need to upload again to add vocals."
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        variant="danger"
+      />
+    </section>
+  );
+}

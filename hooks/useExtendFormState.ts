@@ -24,6 +24,8 @@ type UseExtendFormStateOptions = {
    * When false (default), prompt starts empty and customMode starts off (for Extend forms).
    */
   fullDefaults?: boolean;
+  /** When false (for Extend), instrumental starts false so Vocal Gender is shown and sent. */
+  instrumentalDefault?: boolean;
 };
 
 export function useExtendFormState({
@@ -33,9 +35,10 @@ export function useExtendFormState({
   loadTaskId,
   resetKey = 0,
   fullDefaults = false,
+  instrumentalDefault = true,
 }: UseExtendFormStateOptions) {
   const [defaultParamFlag, setDefaultParamFlag] = useState(DEFAULTS.customMode);
-  const [instrumental, setInstrumental] = useState(DEFAULTS.instrumental);
+  const [instrumental, setInstrumental] = useState(instrumentalDefault ? DEFAULTS.instrumental : false);
   const [prompt, setPrompt] = useState(fullDefaults ? DEFAULTS.prompt : "");
   const [model, setModel] = useState(DEFAULTS.model);
   const [style, setStyle] = useState(DEFAULTS.style);
@@ -55,7 +58,7 @@ export function useExtendFormState({
   /* ── Reset all fields to defaults ── */
   const resetToDefaults = useCallback(() => {
     setDefaultParamFlag(DEFAULTS.customMode);
-    setInstrumental(DEFAULTS.instrumental);
+    setInstrumental(instrumentalDefault ? DEFAULTS.instrumental : false);
     setPrompt(fullDefaults ? DEFAULTS.prompt : "");
     setModel(DEFAULTS.model);
     setStyle(DEFAULTS.style);
@@ -67,7 +70,7 @@ export function useExtendFormState({
     setStyleWeight(DEFAULTS.styleWeight);
     setWeirdnessConstraint(DEFAULTS.weirdnessConstraint);
     setAudioWeight(DEFAULTS.audioWeight);
-  }, [fullDefaults]);
+  }, [fullDefaults, instrumentalDefault]);
 
   /* ── Reset form when resetKey changes ── */
   useEffect(() => {
@@ -89,7 +92,7 @@ export function useExtendFormState({
         const g = data?.generation;
         if (!g || typeof g !== "object") return;
         setDefaultParamFlag(g.customMode === true || g.defaultParamFlag === true);
-        setInstrumental(g.instrumental === true);
+        if (instrumentalDefault) setInstrumental(g.instrumental === true);
         setPrompt(typeof g.prompt === "string" ? g.prompt : (fullDefaults ? DEFAULTS.prompt : ""));
         setModel(typeof g.model === "string" && MODELS.includes(g.model) ? g.model : DEFAULTS.model);
         setStyle(typeof g.style === "string" ? g.style : DEFAULTS.style);
@@ -110,7 +113,7 @@ export function useExtendFormState({
     return () => {
       cancelled = true;
     };
-  }, [loadTaskId, fullDefaults]);
+  }, [loadTaskId, fullDefaults, instrumentalDefault]);
 
   /* ── Derived state ── */
   const isGenerating =

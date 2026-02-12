@@ -10,11 +10,12 @@ import { ExtendSection } from "@/components/extend/ExtendSection";
 import { UploadExtendSection } from "@/components/uploadExtend/UploadExtendSection";
 import { UploadCoverSection } from "@/components/uploadCover/UploadCoverSection";
 import { AddInstrumentalSection } from "@/components/addInstrumental/AddInstrumentalSection";
+import { AddVocalsSection } from "@/components/addVocals/AddVocalsSection";
 import { CreatePersonaSection } from "@/components/persona/CreatePersonaSection";
 import { PersonasList } from "@/components/persona/PersonasList";
 import { AppTitleWithLogo } from "@/components/shared/AppTitle";
 
-export type AppMode = "generate" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental" | "persona";
+export type AppMode = "generate" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental" | "addVocals" | "persona";
 
 const MODE_OPTIONS: { value: AppMode; label: string }[] = [
   { value: "generate", label: "Generate Music" },
@@ -22,6 +23,7 @@ const MODE_OPTIONS: { value: AppMode; label: string }[] = [
   { value: "uploadExtend", label: "Upload & Extend Music" },
   { value: "uploadCover", label: "Upload & Cover Music" },
   { value: "addInstrumental", label: "Add Instrumental" },
+  { value: "addVocals", label: "Add Vocals" },
   { value: "persona", label: "Generate Persona" },
 ];
 
@@ -64,6 +66,9 @@ export default function Home() {
   const [addInstrumentalStatusState, setAddInstrumentalStatusState] = useState<StatusState>(null);
   const [addInstrumentalResetKey, setAddInstrumentalResetKey] = useState(0);
 
+  const [addVocalsStatusState, setAddVocalsStatusState] = useState<StatusState>(null);
+  const [addVocalsResetKey, setAddVocalsResetKey] = useState(0);
+
   const handleNewGeneration = useCallback(() => {
     // Stop all playing audio and reset to start
     document.querySelectorAll("audio").forEach((el) => {
@@ -104,9 +109,9 @@ export default function Home() {
 
   const extendAudioId = resolveAudioId(mode === "extend" ? selectedAudioFilename : null);
 
-  // Resolve display name for selected track (upload-extend, upload-cover, add-instrumental)
+  // Resolve display name for selected track (upload-extend, upload-cover, add-instrumental, add-vocals)
   const selectedTrackDisplayName =
-    (mode === "uploadExtend" || mode === "uploadCover" || mode === "addInstrumental") &&
+    (mode === "uploadExtend" || mode === "uploadCover" || mode === "addInstrumental" || mode === "addVocals") &&
     selectedAudioFilename
       ? parseSavedFilename(selectedAudioFilename)?.title ?? selectedAudioFilename
       : null;
@@ -251,14 +256,15 @@ export default function Home() {
                 : mode === "uploadExtend" ? "uploadExtend"
                   : mode === "uploadCover" ? "uploadCover"
                     : mode === "addInstrumental" ? "addInstrumental"
-                      : undefined
+                      : mode === "addVocals" ? "addVocals"
+                        : undefined
           }
           personaMetadata={personaTasks}
           personas={personaList}
           showLoadFormRadio={mode === "generate"}
           selectedLoadFormFilename={mode === "generate" ? loadFormSelectedFilename : null}
           onSelectLoadFormFilename={mode === "generate" ? setLoadFormSelectedFilename : undefined}
-          showSearch={mode === "generate" || mode === "persona" || mode === "extend" || mode === "uploadExtend" || mode === "uploadCover" || mode === "addInstrumental"}
+          showSearch={mode === "generate" || mode === "persona" || mode === "extend" || mode === "uploadExtend" || mode === "uploadCover" || mode === "addInstrumental" || mode === "addVocals"}
           onNewGeneration={
             mode === "generate"
               ? handleNewGeneration
@@ -330,6 +336,17 @@ export default function Home() {
             onClearSelection={() => setSelectedAudioFilename(null)}
             loadTaskId={selectedAudioFilename ? parseSavedFilename(selectedAudioFilename)?.taskId ?? null : null}
             resetKey={addInstrumentalResetKey}
+          />
+        </div>
+        <div className={mode === "addVocals" ? "" : "hidden"}>
+          <AddVocalsSection
+            statusState={addVocalsStatusState}
+            setStatusState={setAddVocalsStatusState}
+            selectedTrackFilename={selectedAudioFilename}
+            selectedTrackName={selectedTrackDisplayName}
+            onClearSelection={() => setSelectedAudioFilename(null)}
+            loadTaskId={selectedAudioFilename ? parseSavedFilename(selectedAudioFilename)?.taskId ?? null : null}
+            resetKey={addVocalsResetKey}
           />
         </div>
         {mode === "persona" && (

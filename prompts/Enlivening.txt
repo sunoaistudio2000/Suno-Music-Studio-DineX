@@ -1,0 +1,19 @@
+Title: Enlivening
+
+Prompt:
+
+Neo-Classical Cinematic style that features soaring female operatic vocals over a bed of fast, enlivening string arpeggios and majestic piano to create a powerful and heroic atmosphere.
+
+Style: 120 BPM, Neo-Classical, Cinematic Orchestral, fast string arpeggios, operatic female soprano, soaring vocals, majestic piano, staccato violins, ethereal atmosphere, minor key, building tension, powerful resolution
+
+Negative Tags: pop, drums, electronic, synthesizer, rock, male voice, low energy, jazz, hip hop, country, lo-fi, noisy
+
+Vocal Gender: Female
+
+Model: V5
+
+Style Weight: 0.8
+
+Weirdness: 0.4
+
+Audio Weight: 0.65

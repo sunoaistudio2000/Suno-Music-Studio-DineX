@@ -34,6 +34,7 @@ export function ExtendForm({
     personas: personasProp,
     loadTaskId,
     resetKey,
+    instrumentalDefault: false,
   });
 
   /* ── Validation (matches Generate Music pattern) ── */
@@ -59,6 +60,7 @@ export function ExtendForm({
         instrumental: fs.instrumental,
       };
       if (fs.prompt.trim()) body.prompt = fs.prompt.trim();
+      if (!fs.instrumental) body.vocalGender = fs.vocalGender;
 
       if (fs.defaultParamFlag) {
         body.model = fs.model;
@@ -66,7 +68,6 @@ export function ExtendForm({
         body.title = fs.title;
         body.continueAt = Number(fs.continueAt);
         if (fs.negativeTags) body.negativeTags = fs.negativeTags;
-        if (!fs.instrumental) body.vocalGender = fs.vocalGender;
         if (!fs.instrumental && fs.selectedPersonaId.trim()) body.personaId = fs.selectedPersonaId.trim();
         body.styleWeight = fs.styleWeight;
         body.weirdnessConstraint = fs.weirdnessConstraint;

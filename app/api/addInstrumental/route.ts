@@ -12,7 +12,7 @@ export type AddInstrumentalBody = {
   tags: string;
   negativeTags: string;
   model?: string;
-  vocalGender?: "m" | "f";
+  vocalGender?: "m" | "f" | "d";
   styleWeight?: number;
   weirdnessConstraint?: number;
   audioWeight?: number;
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     model: modelVal,
     callBackUrl: getCallbackUrl(),
   };
-  if (vocalGender === "m" || vocalGender === "f") payload.vocalGender = vocalGender;
+  if (vocalGender === "m" || vocalGender === "f" || vocalGender === "d") payload.vocalGender = vocalGender;
   if (typeof styleWeight === "number") payload.styleWeight = styleWeight;
   if (typeof weirdnessConstraint === "number")
     payload.weirdnessConstraint = weirdnessConstraint;

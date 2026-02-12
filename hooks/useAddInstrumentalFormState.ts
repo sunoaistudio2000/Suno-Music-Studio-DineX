@@ -15,7 +15,7 @@ const DEFAULTS = {
   tags: "relaxing, piano, soothing",
   negativeTags: "heavy metal, fast drums",
   model: "V4_5PLUS" as AddInstrumentalModelKey,
-  vocalGender: "m" as "m" | "f",
+  vocalGender: "m" as "m" | "f" | "d",
   styleWeight: 0.65,
   weirdnessConstraint: 0.65,
   audioWeight: 0.65,
@@ -38,7 +38,7 @@ export function useAddInstrumentalFormState({
   const [tags, setTags] = useState(DEFAULTS.tags);
   const [negativeTags, setNegativeTags] = useState(DEFAULTS.negativeTags);
   const [model, setModel] = useState<AddInstrumentalModelKey>(DEFAULTS.model);
-  const [vocalGender, setVocalGender] = useState<"m" | "f">(DEFAULTS.vocalGender);
+  const [vocalGender, setVocalGender] = useState<"m" | "f" | "d">(DEFAULTS.vocalGender);
   const [styleWeight, setStyleWeight] = useState(DEFAULTS.styleWeight);
   const [weirdnessConstraint, setWeirdnessConstraint] = useState(
     DEFAULTS.weirdnessConstraint
@@ -82,7 +82,7 @@ export function useAddInstrumentalFormState({
         if (g.negativeTags) setNegativeTags(g.negativeTags);
         if (ADD_INSTRUMENTAL_MODELS.includes(g.model))
           setModel(g.model as AddInstrumentalModelKey);
-        if (g.vocalGender === "f" || g.vocalGender === "m")
+        if (g.vocalGender === "f" || g.vocalGender === "m" || g.vocalGender === "d")
           setVocalGender(g.vocalGender);
         if (typeof g.styleWeight === "number") setStyleWeight(g.styleWeight);
         if (typeof g.weirdnessConstraint === "number")

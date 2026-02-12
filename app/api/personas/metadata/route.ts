@@ -26,7 +26,7 @@ export async function GET() {
     if (taskIds.length > 0) {
       const generations = await prisma.generation.findMany({
         where: { taskId: { in: taskIds } },
-        select: { taskId: true, instrumental: true, isExtension: true, uploadUrl: true, isUploadCover: true, isAddInstrumental: true },
+        select: { taskId: true, instrumental: true, isExtension: true, uploadUrl: true, isUploadCover: true, isAddInstrumental: true, isAddVocals: true },
       });
       for (const g of generations) {
         if (tasks[g.taskId]) {
@@ -38,6 +38,8 @@ export async function GET() {
           }
           if (g.isAddInstrumental)
             tasks[g.taskId].isAddInstrumental = true;
+          if (g.isAddVocals)
+            tasks[g.taskId].isAddVocals = true;
         }
       }
     }

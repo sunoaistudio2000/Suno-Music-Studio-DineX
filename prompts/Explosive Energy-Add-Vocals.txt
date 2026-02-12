@@ -1,0 +1,29 @@
+Title: Explosive Energy
+
+Prompt:
+
+[Verse 1 - Male, Raspy Rock Vocals]
+In the static of the night, I see the fire rise,
+Burning down the shadows, breaking all the ties.
+
+[Verse 2 - Female, Melodic Power Vocals]
+Caught within the echo, reaching for the spark,
+We are more than ghosts just dancing in the dark.
+
+[Chorus - Both, Powerful Harmonies]
+Explosive energy, it’s tearing through the soul,
+Two hearts colliding now, we’re losing all control!
+
+Style: 140 BPM, Melodic Power Rock, explosive cinematic energy, male and female duet, harmonizing powerful vocals, soaring lead guitar, heavy driving drums, anthemic, minor key, polished production, emotional intensity, massive wall of sound
+
+Negative Tags: pop, happy, acoustic, lo-fi, soft minimalist, gentle, slow tempo, jazz, bright, high-pitched, thin sound, relaxing, funk
+
+Vocal Gender: Duet
+
+Model: V5
+
+Style Weight: 0.85
+
+Weirdness: 0.65
+
+Audio Weight: 0.55

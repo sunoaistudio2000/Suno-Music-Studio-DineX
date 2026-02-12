@@ -161,7 +161,7 @@ export function CustomModeFields({
             <label className="text-sm text-gray-400">Vocal Gender</label>
             <InfoHint
               text="Only affects vocals"
-              tooltip="Increases probability of male/female voice; does not guarantee it."
+              tooltip="Increases probability of male/female/duet; does not guarantee it."
               id={`${idPrefix}-vocal-gender-tooltip`}
               tooltipShiftRight={34}
             />

@@ -310,6 +310,35 @@ export function AddInstrumentalForm({
             />
           </div>
 
+          {/* ── Vocal Gender ── */}
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm text-gray-400">Vocal Gender</label>
+              <InfoHint
+                text="Only affects vocals"
+                tooltip="Increases probability of male/female/duet; does not guarantee it."
+                id="add-instrumental-vocal-gender-tooltip"
+                tooltipShiftRight={34}
+              />
+            </div>
+            <fieldset>
+              <div className="flex gap-4">
+                {(["m", "f", "d"] as const).map((g) => (
+                  <label key={g} className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="radio"
+                      name="addInstrumentalVocalGender"
+                      checked={fs.vocalGender === g}
+                      onChange={() => fs.setVocalGender(g)}
+                      className="text-blue-600"
+                    />
+                    <span className="text-sm">{g === "m" ? "Male" : g === "f" ? "Female" : "Duet"}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </div>
+
           {/* ── Weights ── */}
           <div className="grid grid-cols-3 gap-4">
             {[
@@ -376,40 +405,6 @@ export function AddInstrumentalForm({
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* ── Advanced (collapsible) ── */}
-          <div>
-            <button
-              type="button"
-              onClick={() => fs.setShowAdvanced(!fs.showAdvanced)}
-              className="text-sm text-gray-400 hover:text-gray-300"
-            >
-              {fs.showAdvanced ? "Hide" : "Show"} advanced options
-            </button>
-            {fs.showAdvanced && (
-              <div className="mt-3">
-                <label className="mb-1 block text-sm text-gray-400">
-                  Vocal Gender
-                </label>
-                <fieldset>
-                  <div className="flex gap-4">
-                    {(["m", "f"] as const).map((g) => (
-                      <label key={g} className="flex cursor-pointer items-center gap-2">
-                        <input
-                          type="radio"
-                          name="addInstrumentalVocalGender"
-                          checked={fs.vocalGender === g}
-                          onChange={() => fs.setVocalGender(g)}
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm">{g === "m" ? "Male" : "Female"}</span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              </div>
-            )}
           </div>
 
           {/* Submit */}

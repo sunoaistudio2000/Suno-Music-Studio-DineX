@@ -95,9 +95,10 @@ type SavedTracksListProps = {
    * - "uploadExtend": show all tracks with metadata, simple select buttons
    * - "uploadCover": same as uploadExtend
    * - "addInstrumental": same as uploadCover (select track as source)
+   * - "addVocals": same as addInstrumental (select track as source)
    * - undefined: normal mode with delete buttons
    */
-  selectionMode?: "persona" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental";
+  selectionMode?: "persona" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental" | "addVocals";
   /** When provided (e.g. from page), used instead of fetching; avoids duplicate requests. */
   personaMetadata?: Record<string, PersonaTaskMeta> | null;
   personas?: SavedPersona[];
@@ -225,6 +226,18 @@ function isAddInstrumentalTrack(
   return task?.isAddInstrumental === true;
 }
 
+/** True if this track was created via Add Vocals. */
+function isAddVocalsTrack(
+  filename: string,
+  tasks: Record<string, PersonaTaskMeta> | null
+): boolean {
+  if (!tasks) return false;
+  const parsed = parseSavedFilename(filename);
+  if (!parsed) return false;
+  const task = tasks[parsed.taskId];
+  return task?.isAddVocals === true;
+}
+
 /** True if this track was created more than 14 days ago (expired on Suno servers). */
 function isExpiredTrack(
   filename: string,
@@ -292,16 +305,17 @@ export function SavedTracksList({
   const isUploadExtendMode = selectionMode === "uploadExtend";
   const isUploadCoverMode = selectionMode === "uploadCover";
   const isAddInstrumentalMode = selectionMode === "addInstrumental";
+  const isAddVocalsMode = selectionMode === "addVocals";
   const filesToShow = useMemo(
     () =>
       isPersonaMode
         ? filterVocalTracks(savedFiles, tasksEffective)
-        : isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode
+        : isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode || isAddVocalsMode
           ? filterAllTracks(savedFiles, tasksEffective)
           : isExtendMode
             ? filterRecentTracks(savedFiles, tasksEffective)
             : savedFiles,
-    [isPersonaMode, isUploadExtendMode, isUploadCoverMode, isAddInstrumentalMode, isExtendMode, savedFiles, tasksEffective]
+    [isPersonaMode, isUploadExtendMode, isUploadCoverMode, isAddInstrumentalMode, isAddVocalsMode, isExtendMode, savedFiles, tasksEffective]
   );
   const searchFilteredFiles = useMemo(() => {
     if (searchTaskIds === null) return filesToShow;
@@ -499,9 +513,11 @@ export function SavedTracksList({
                   ? "No tracks to cover."
                   : isAddInstrumentalMode
                     ? "No tracks to add instrumental to."
-                    : isExtendMode
-                    ? "No tracks to extend. Only tracks from the last 14 days can be extended."
-                    : "No saved tracks yet. Generate music and use Download to save files."}
+                    : isAddVocalsMode
+                      ? "No tracks to add vocals to."
+                      : isExtendMode
+                        ? "No tracks to extend. Only tracks from the last 14 days can be extended."
+                        : "No saved tracks yet. Generate music and use Download to save files."}
           </p>
         ) : searchFilteredFiles.length === 0 ? (
           <p className="text-sm text-gray-500">
@@ -556,7 +572,8 @@ export function SavedTracksList({
                     const uploadExtended = isUploadExtendedTrack(filename, tasksEffective);
                     const uploadCovered = isUploadCoveredTrack(filename, tasksEffective);
                     const addInstrumental = isAddInstrumentalTrack(filename, tasksEffective);
-                    const expired = (isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode) && isExpiredTrack(filename, tasksEffective);
+                    const addVocals = isAddVocalsTrack(filename, tasksEffective);
+                    const expired = (isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode || isAddVocalsMode) && isExpiredTrack(filename, tasksEffective);
                     return (
                       <li
                         key={filename}
@@ -616,6 +633,17 @@ export function SavedTracksList({
                             >
                               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                              </svg>
+                            </span>
+                          )}
+                          {addVocals && (
+                            <span
+                              className="inline-flex shrink-0 text-pink-400"
+                              title="Add Vocals"
+                              aria-label="Add Vocals"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.22.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
                               </svg>
                             </span>
                           )}
