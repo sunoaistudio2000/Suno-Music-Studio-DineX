@@ -48,6 +48,8 @@ export type PersonaTaskMeta = {
   isUploadExtension?: boolean;
   /** True when the track was created via Upload & Cover Music. */
   isUploadCover?: boolean;
+  /** True when the track was created via Add Instrumental. */
+  isAddInstrumental?: boolean;
   /** ISO date string of when the earliest track in this task was created. */
   createdAt?: string;
 };

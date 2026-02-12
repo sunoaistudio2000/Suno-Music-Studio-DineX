@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { parseKieResponse } from "@/lib/api-error";
+import { validateRequired } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
@@ -71,25 +72,21 @@ export async function POST(request: NextRequest) {
     audioWeight,
   } = body;
 
-  if (!audioId?.trim()) {
-    return NextResponse.json(
-      { error: "audioId is required" },
-      { status: 422 }
-    );
-  }
+  const audioIdError = validateRequired(body, ["audioId"]);
+  if (audioIdError) return audioIdError;
 
   if (defaultParamFlag) {
-    if (!style?.trim() || !title?.trim() || continueAt == null || continueAt <= 0) {
+    const customError = validateRequired(body, ["style", "title"], "In custom mode, style, title, and continueAt are required");
+    if (customError) return customError;
+    if (continueAt == null || continueAt <= 0) {
       return NextResponse.json(
         { error: "In custom mode, style, title, and continueAt are required" },
         { status: 422 }
       );
     }
-    if (!instrumental && !prompt?.trim()) {
-      return NextResponse.json(
-        { error: "In custom mode with vocals, prompt is required" },
-        { status: 422 }
-      );
+    if (!instrumental) {
+      const promptError = validateRequired(body, ["prompt"], "In custom mode with vocals, prompt is required");
+      if (promptError) return promptError;
     }
   }
 

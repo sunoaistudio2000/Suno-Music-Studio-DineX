@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { parseKieResponse } from "@/lib/api-error";
+import { validateRequired } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
@@ -72,29 +73,14 @@ export async function POST(request: NextRequest) {
     audioWeight,
   } = body;
 
-  if (!uploadUrl?.trim()) {
-    return NextResponse.json(
-      { error: "uploadUrl is required" },
-      { status: 422 }
-    );
-  }
+  const uploadUrlError = validateRequired(body, ["uploadUrl"]);
+  if (uploadUrlError) return uploadUrlError;
 
   if (customMode) {
-    if (instrumental) {
-      if (!style?.trim() || !title?.trim()) {
-        return NextResponse.json(
-          { error: "In custom instrumental mode, style and title are required" },
-          { status: 422 }
-        );
-      }
-    } else {
-      if (!prompt?.trim() || !style?.trim() || !title?.trim()) {
-        return NextResponse.json(
-          { error: "In custom mode, prompt, style, and title are required" },
-          { status: 422 }
-        );
-      }
-    }
+    const customError = instrumental
+      ? validateRequired(body, ["style", "title"], "In custom instrumental mode, style and title are required")
+      : validateRequired(body, ["prompt", "style", "title"], "In custom mode, prompt, style, and title are required");
+    if (customError) return customError;
   }
 
   const payload: Record<string, unknown> = {

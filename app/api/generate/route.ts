@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { parseKieResponse } from "@/lib/api-error";
+import { validateRequired } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
@@ -68,25 +69,15 @@ export async function POST(request: NextRequest) {
   } = body;
 
   if (customMode) {
-    if (!style || !title) {
-      return NextResponse.json(
-        { error: "In custom mode, style and title are required" },
-        { status: 422 }
-      );
-    }
-    if (!instrumental && !prompt.trim()) {
-      return NextResponse.json(
-        { error: "In custom mode with vocals, prompt (lyrics) is required" },
-        { status: 422 }
-      );
+    const styleTitleError = validateRequired(body, ["style", "title"], "In custom mode, style and title are required");
+    if (styleTitleError) return styleTitleError;
+    if (!instrumental) {
+      const promptError = validateRequired(body, ["prompt"], "In custom mode with vocals, prompt (lyrics) is required");
+      if (promptError) return promptError;
     }
   } else {
-    if (!prompt.trim()) {
-      return NextResponse.json(
-        { error: "Prompt is required" },
-        { status: 422 }
-      );
-    }
+    const promptError = validateRequired(body, ["prompt"], "Prompt is required");
+    if (promptError) return promptError;
   }
 
   const payload: Record<string, unknown> = {

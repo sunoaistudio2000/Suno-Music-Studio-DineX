@@ -1,0 +1,13 @@
+Title: The Devil is Calling
+
+Tags: 88 BPM, Dark Southern Gothic, Blues Rock, gritty slide guitar, stomping heavy drums, deep tremolo guitar, swampy atmosphere, minor key, cinematic, raw, menacing groove
+
+Negative Tags: pop, happy, electronic, synth, techno, high-pitched, disco, funk, bright, clean, orchestral
+
+Model: V5
+
+Style Weight	0.8
+
+Weirdness	0.55	
+
+Audio Weight	0.75

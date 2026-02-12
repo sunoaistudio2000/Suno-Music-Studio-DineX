@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { parseKieResponse } from "@/lib/api-error";
+import { validateRequired } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
@@ -74,30 +75,19 @@ export async function POST(request: NextRequest) {
     audioWeight,
   } = body;
 
-  if (!uploadUrl?.trim()) {
-    return NextResponse.json(
-      { error: "uploadUrl is required" },
-      { status: 422 }
-    );
-  }
+  const uploadUrlError = validateRequired(body, ["uploadUrl"]);
+  if (uploadUrlError) return uploadUrlError;
 
   if (defaultParamFlag) {
-    if (instrumental) {
-      // Instrumental custom mode: style, title, uploadUrl required
-      if (!style?.trim() || !title?.trim() || continueAt == null || continueAt <= 0) {
-        return NextResponse.json(
-          { error: "In custom instrumental mode, style, title, and continueAt are required" },
-          { status: 422 }
-        );
-      }
-    } else {
-      // Non-instrumental custom mode: style, prompt, title, uploadUrl required
-      if (!prompt?.trim() || !style?.trim() || !title?.trim() || continueAt == null || continueAt <= 0) {
-        return NextResponse.json(
-          { error: "In custom mode, prompt, style, title, and continueAt are required" },
-          { status: 422 }
-        );
-      }
+    const customError = instrumental
+      ? validateRequired(body, ["style", "title"], "In custom instrumental mode, style, title, and continueAt are required")
+      : validateRequired(body, ["prompt", "style", "title"], "In custom mode, prompt, style, title, and continueAt are required");
+    if (customError) return customError;
+    if (continueAt == null || continueAt <= 0) {
+      return NextResponse.json(
+        { error: instrumental ? "In custom instrumental mode, style, title, and continueAt are required" : "In custom mode, prompt, style, title, and continueAt are required" },
+        { status: 422 }
+      );
     }
   }
 

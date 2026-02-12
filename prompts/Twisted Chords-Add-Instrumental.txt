@@ -1,0 +1,13 @@
+Title: Twisted Chords
+
+Tags: 70 BPM, Doom-Gothic Rock, slow heavy downtuned guitars, minor key, haunting atmospheric textures, deep reverb, melancholic, melodic lead guitar, thick bassline, dramatic pauses, mournful energy, church bells, funeral dirge vibe, ethereal synths
+
+Negative Tags: fast tempo, double-kick drums, shredding, happy, upbeat, major key, bright, pop, acoustic, electronic dance music, techno, aggressive shouting, high-pitched, lo-fi, noisy
+
+Model: V5
+
+Style Weight	0.85
+
+Weirdness	0.55	
+
+Audio Weight	0.3

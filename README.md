@@ -18,6 +18,9 @@ We’ve added a new feature that lets you upload your own MP3 tracks and extend 
 #### 🎶 Upload & Cover Music
 We’ve added a new feature that lets you upload your own MP3 tracks and cover them in a new style directly on the server. The process uses an upload step followed by a cover step, with files hosted temporarily on the [kie.ai](https://kie.ai/) server. Even if you modify the prompt and adjust the style, the cover preserves the track’s original melody and musical “DNA,” keeping its core identity intact while creating a fresh, stylistically transformed version.
 
+#### 🎶 Add Instrumental
+The Add Instrumental feature lets you transform your uploaded vocal or melody into a full instrumental track. Simply upload your MP3 vocal or melody, then set the title, tags, and weights to customize the result. The generated instrumental is created directly on the server, allowing you to instantly listen to the transformation. This is perfect for experimenting with new arrangements, remixing ideas, or quickly producing professional-sounding tracks without needing a producer.
+
 #### 👉 Links & Resources
 
 - [Suno](https://suno.com/)  
@@ -59,5 +62,7 @@ npm run dev
 📺 **Video:(Upload & Extend Music)** [Watch on YouTube](https://youtu.be/oLdW8281ykk) 
 
 📺 **Video:(Upload & Cover Music)** [Watch on YouTube](https://youtu.be/hFt9BumMNps) 
+
+📺 **Video:(Add Instrumental)** [Watch on YouTube](https://youtu.be/BybVzDB1Kdg) 
 
 

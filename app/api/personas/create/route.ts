@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { parseKieResponse } from "@/lib/api-error";
+import { validateRequired } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
@@ -36,13 +37,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
+  const validationError = validateRequired(
+    body,
+    ["taskId", "audioId", "name", "description"],
+    "taskId, audioId, name, and description are required"
+  );
+  if (validationError) return validationError;
+
   const { taskId, audioId, name, description } = body;
-  if (!taskId || !audioId || !name || !description) {
-    return NextResponse.json(
-      { error: "taskId, audioId, name, and description are required" },
-      { status: 400 }
-    );
-  }
 
   const res = await fetch(`${KIE_BASE}/generate/generate-persona`, {
     method: "POST",

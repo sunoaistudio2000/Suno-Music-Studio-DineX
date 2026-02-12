@@ -9,17 +9,19 @@ import { GenerationStatus } from "@/components/generate/GenerationStatus";
 import { ExtendSection } from "@/components/extend/ExtendSection";
 import { UploadExtendSection } from "@/components/uploadExtend/UploadExtendSection";
 import { UploadCoverSection } from "@/components/uploadCover/UploadCoverSection";
+import { AddInstrumentalSection } from "@/components/addInstrumental/AddInstrumentalSection";
 import { CreatePersonaSection } from "@/components/persona/CreatePersonaSection";
 import { PersonasList } from "@/components/persona/PersonasList";
 import { AppTitleWithLogo } from "@/components/shared/AppTitle";
 
-export type AppMode = "generate" | "extend" | "uploadExtend" | "uploadCover" | "persona";
+export type AppMode = "generate" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental" | "persona";
 
 const MODE_OPTIONS: { value: AppMode; label: string }[] = [
   { value: "generate", label: "Generate Music" },
   { value: "extend", label: "Extend Music" },
   { value: "uploadExtend", label: "Upload & Extend Music" },
   { value: "uploadCover", label: "Upload & Cover Music" },
+  { value: "addInstrumental", label: "Add Instrumental" },
   { value: "persona", label: "Generate Persona" },
 ];
 
@@ -58,6 +60,9 @@ export default function Home() {
 
   const [uploadCoverStatusState, setUploadCoverStatusState] = useState<StatusState>(null);
   const [uploadCoverResetKey, setUploadCoverResetKey] = useState(0);
+
+  const [addInstrumentalStatusState, setAddInstrumentalStatusState] = useState<StatusState>(null);
+  const [addInstrumentalResetKey, setAddInstrumentalResetKey] = useState(0);
 
   const handleNewGeneration = useCallback(() => {
     // Stop all playing audio and reset to start
@@ -99,9 +104,10 @@ export default function Home() {
 
   const extendAudioId = resolveAudioId(mode === "extend" ? selectedAudioFilename : null);
 
-  // Resolve display name for selected track (upload-extend and upload-cover)
+  // Resolve display name for selected track (upload-extend, upload-cover, add-instrumental)
   const selectedTrackDisplayName =
-    (mode === "uploadExtend" || mode === "uploadCover") && selectedAudioFilename
+    (mode === "uploadExtend" || mode === "uploadCover" || mode === "addInstrumental") &&
+    selectedAudioFilename
       ? parseSavedFilename(selectedAudioFilename)?.title ?? selectedAudioFilename
       : null;
 
@@ -244,14 +250,15 @@ export default function Home() {
               : mode === "extend" ? "extend"
                 : mode === "uploadExtend" ? "uploadExtend"
                   : mode === "uploadCover" ? "uploadCover"
-                    : undefined
+                    : mode === "addInstrumental" ? "addInstrumental"
+                      : undefined
           }
           personaMetadata={personaTasks}
           personas={personaList}
           showLoadFormRadio={mode === "generate"}
           selectedLoadFormFilename={mode === "generate" ? loadFormSelectedFilename : null}
           onSelectLoadFormFilename={mode === "generate" ? setLoadFormSelectedFilename : undefined}
-          showSearch={mode === "generate" || mode === "persona" || mode === "extend" || mode === "uploadExtend" || mode === "uploadCover"}
+          showSearch={mode === "generate" || mode === "persona" || mode === "extend" || mode === "uploadExtend" || mode === "uploadCover" || mode === "addInstrumental"}
           onNewGeneration={
             mode === "generate"
               ? handleNewGeneration
@@ -312,6 +319,17 @@ export default function Home() {
             loadTaskId={selectedAudioFilename ? parseSavedFilename(selectedAudioFilename)?.taskId ?? null : null}
             personas={personaList}
             resetKey={uploadCoverResetKey}
+          />
+        </div>
+        <div className={mode === "addInstrumental" ? "" : "hidden"}>
+          <AddInstrumentalSection
+            statusState={addInstrumentalStatusState}
+            setStatusState={setAddInstrumentalStatusState}
+            selectedTrackFilename={selectedAudioFilename}
+            selectedTrackName={selectedTrackDisplayName}
+            onClearSelection={() => setSelectedAudioFilename(null)}
+            loadTaskId={selectedAudioFilename ? parseSavedFilename(selectedAudioFilename)?.taskId ?? null : null}
+            resetKey={addInstrumentalResetKey}
           />
         </div>
         {mode === "persona" && (

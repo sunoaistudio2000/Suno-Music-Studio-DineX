@@ -94,9 +94,10 @@ type SavedTracksListProps = {
    * - "extend": show recent tracks (14 days), simple select buttons
    * - "uploadExtend": show all tracks with metadata, simple select buttons
    * - "uploadCover": same as uploadExtend
+   * - "addInstrumental": same as uploadCover (select track as source)
    * - undefined: normal mode with delete buttons
    */
-  selectionMode?: "persona" | "extend" | "uploadExtend" | "uploadCover";
+  selectionMode?: "persona" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental";
   /** When provided (e.g. from page), used instead of fetching; avoids duplicate requests. */
   personaMetadata?: Record<string, PersonaTaskMeta> | null;
   personas?: SavedPersona[];
@@ -212,6 +213,18 @@ function isUploadCoveredTrack(
   return task?.isUploadCover === true;
 }
 
+/** True if this track was created via Add Instrumental. */
+function isAddInstrumentalTrack(
+  filename: string,
+  tasks: Record<string, PersonaTaskMeta> | null
+): boolean {
+  if (!tasks) return false;
+  const parsed = parseSavedFilename(filename);
+  if (!parsed) return false;
+  const task = tasks[parsed.taskId];
+  return task?.isAddInstrumental === true;
+}
+
 /** True if this track was created more than 14 days ago (expired on Suno servers). */
 function isExpiredTrack(
   filename: string,
@@ -278,16 +291,17 @@ export function SavedTracksList({
 
   const isUploadExtendMode = selectionMode === "uploadExtend";
   const isUploadCoverMode = selectionMode === "uploadCover";
+  const isAddInstrumentalMode = selectionMode === "addInstrumental";
   const filesToShow = useMemo(
     () =>
       isPersonaMode
         ? filterVocalTracks(savedFiles, tasksEffective)
-        : isUploadExtendMode || isUploadCoverMode
+        : isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode
           ? filterAllTracks(savedFiles, tasksEffective)
           : isExtendMode
             ? filterRecentTracks(savedFiles, tasksEffective)
             : savedFiles,
-    [isPersonaMode, isUploadExtendMode, isUploadCoverMode, isExtendMode, savedFiles, tasksEffective]
+    [isPersonaMode, isUploadExtendMode, isUploadCoverMode, isAddInstrumentalMode, isExtendMode, savedFiles, tasksEffective]
   );
   const searchFilteredFiles = useMemo(() => {
     if (searchTaskIds === null) return filesToShow;
@@ -483,7 +497,9 @@ export function SavedTracksList({
                 ? "No tracks to extend."
                 : isUploadCoverMode
                   ? "No tracks to cover."
-                  : isExtendMode
+                  : isAddInstrumentalMode
+                    ? "No tracks to add instrumental to."
+                    : isExtendMode
                     ? "No tracks to extend. Only tracks from the last 14 days can be extended."
                     : "No saved tracks yet. Generate music and use Download to save files."}
           </p>
@@ -539,7 +555,8 @@ export function SavedTracksList({
                     const extended = isExtendedTrack(filename, tasksEffective);
                     const uploadExtended = isUploadExtendedTrack(filename, tasksEffective);
                     const uploadCovered = isUploadCoveredTrack(filename, tasksEffective);
-                    const expired = (isUploadExtendMode || isUploadCoverMode) && isExpiredTrack(filename, tasksEffective);
+                    const addInstrumental = isAddInstrumentalTrack(filename, tasksEffective);
+                    const expired = (isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode) && isExpiredTrack(filename, tasksEffective);
                     return (
                       <li
                         key={filename}
@@ -588,6 +605,17 @@ export function SavedTracksList({
                             >
                               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
+                            </span>
+                          )}
+                          {addInstrumental && (
+                            <span
+                              className="inline-flex shrink-0 text-orange-400"
+                              title="Add Instrumental"
+                              aria-label="Add Instrumental"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                               </svg>
                             </span>
                           )}
