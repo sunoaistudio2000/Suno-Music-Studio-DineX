@@ -62,6 +62,7 @@ model Generation {
   isUploadCover      Boolean? // true when created via Upload & Cover
   isAddInstrumental  Boolean? // true when created via Add Instrumental
   isAddVocals        Boolean? // true when created via Add Vocals
+  isSeparateVocals   Boolean? // true when created via Separate Vocals
   createdAt          DateTime @default(now())
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tracks             Track[]

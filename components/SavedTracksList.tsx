@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { StyledAudioPlayer } from "@/components/StyledAudioPlayer";
+import { VocalsStemIcon, InstrumentalStemIcon } from "@/components/shared/FormIcons";
 import type { PersonaTaskMeta, SavedPersona } from "@/app/types";
 
 /** Parse filename like taskId-1-title.mp3 into { taskId, index, title } or null. Exported for persona selection. */
@@ -52,8 +53,17 @@ export function trackLabel(index: number): string {
   return `Track ${index}`;
 }
 
+/** Strip "Instrumental-" or "Vocals-" prefix from group title for display. */
+function stripStemPrefixFromTitle(title: string): string {
+  const t = title.trim();
+  const re = /^(instrumental|vocals)[\s-]+/i;
+  const stripped = t.replace(re, "").trim();
+  return stripped || t;
+}
+
 const INITIAL_TRACKS = 4;
 const LOAD_MORE_TRACKS = 5;
+const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
 type GroupWithFiles = { title: string; files: { filename: string; index: number }[] };
 
@@ -96,9 +106,10 @@ type SavedTracksListProps = {
    * - "uploadCover": same as uploadExtend
    * - "addInstrumental": same as uploadCover (select track as source)
    * - "addVocals": same as addInstrumental (select track as source)
+   * - "separateVocals": tracks with vocals (audioId), for stem separation
    * - undefined: normal mode with delete buttons
    */
-  selectionMode?: "persona" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental" | "addVocals";
+  selectionMode?: "persona" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental" | "addVocals" | "separateVocals";
   /** When provided (e.g. from page), used instead of fetching; avoids duplicate requests. */
   personaMetadata?: Record<string, PersonaTaskMeta> | null;
   personas?: SavedPersona[];
@@ -113,13 +124,14 @@ type SavedTracksListProps = {
   onNewGeneration?: () => void;
 };
 
-/** When showSelection is true, only include vocal files (exclude instrumental tracks) within 14 days. */
+/** When showSelection is true, only include vocal files (exclude instrumental tracks) within 14 days.
+ * When metadata is null or empty, show all files so tracks are visible while metadata loads. */
 function filterVocalTracks(
   files: string[],
   tasks: Record<string, PersonaTaskMeta> | null
 ): string[] {
-  if (!tasks) return [];
-  const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  if (!tasks || Object.keys(tasks).length === 0) return files;
+  const fourteenDaysAgo = Date.now() - FOURTEEN_DAYS_MS;
   return files.filter((filename) => {
     const parsed = parseSavedFilename(filename);
     if (!parsed) return false;
@@ -132,13 +144,14 @@ function filterVocalTracks(
   });
 }
 
-/** For extend mode, only show tracks whose taskId exists in metadata and are within 14 days. */
+/** For extend mode, only show tracks whose taskId exists in metadata and are within 14 days.
+ * When metadata is null or empty, show all files so tracks are visible while metadata loads. */
 function filterRecentTracks(
   files: string[],
   tasks: Record<string, PersonaTaskMeta> | null
 ): string[] {
-  if (!tasks) return [];
-  const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  if (!tasks || Object.keys(tasks).length === 0) return files;
+  const fourteenDaysAgo = Date.now() - FOURTEEN_DAYS_MS;
   return files.filter((filename) => {
     const parsed = parseSavedFilename(filename);
     if (!parsed) return false;
@@ -149,16 +162,38 @@ function filterRecentTracks(
   });
 }
 
-/** For uploadExtend mode, show ALL tracks whose taskId exists in metadata (no date filter). */
+/** For uploadExtend mode, show ALL tracks whose taskId exists in metadata (no date filter).
+ * When metadata is null or empty, show all files so tracks are visible while metadata loads. */
 function filterAllTracks(
   files: string[],
   tasks: Record<string, PersonaTaskMeta> | null
 ): string[] {
-  if (!tasks) return [];
+  if (!tasks || Object.keys(tasks).length === 0) return files;
   return files.filter((filename) => {
     const parsed = parseSavedFilename(filename);
     if (!parsed) return false;
     return Boolean(tasks[parsed.taskId]);
+  });
+}
+
+/** For separateVocals mode, show tracks with metadata AND audioId (vocals — instrumental tracks excluded).
+ * Only tracks from the last 14 days (Suno API limitation).
+ * When metadata is null or empty, show all files so tracks are visible while metadata loads. */
+function filterSeparateVocalsTracks(
+  files: string[],
+  tasks: Record<string, PersonaTaskMeta> | null
+): string[] {
+  if (!tasks || Object.keys(tasks).length === 0) return files;
+  const fourteenDaysAgo = Date.now() - FOURTEEN_DAYS_MS;
+  return files.filter((filename) => {
+    const parsed = parseSavedFilename(filename);
+    if (!parsed) return false;
+    const task = tasks[parsed.taskId];
+    if (!task) return false;
+    if (task.createdAt && new Date(task.createdAt).getTime() < fourteenDaysAgo) return false;
+    if (task.instrumental === true) return false;
+    const track = task.tracks?.[parsed.index - 1];
+    return Boolean(track?.id);
   });
 }
 
@@ -178,89 +213,47 @@ function trackHasPersona(
   return personas.some((p) => p.taskId === parsed.taskId && p.audioId === audioId);
 }
 
-/** True if this track was created via Extend Music (but not Upload & Extend or Upload & Cover). */
-function isExtendedTrack(
-  filename: string,
-  tasks: Record<string, PersonaTaskMeta> | null
-): boolean {
-  if (!tasks) return false;
+function getTask(filename: string, tasks: Record<string, PersonaTaskMeta> | null): PersonaTaskMeta | undefined {
+  if (!tasks) return undefined;
   const parsed = parseSavedFilename(filename);
-  if (!parsed) return false;
-  const task = tasks[parsed.taskId];
+  return parsed ? tasks[parsed.taskId] : undefined;
+}
+
+function isExtendedTrack(filename: string, tasks: Record<string, PersonaTaskMeta> | null): boolean {
+  const task = getTask(filename, tasks);
   return task?.isExtension === true && !task?.isUploadExtension && !task?.isUploadCover;
 }
 
-/** True if this track was created via Upload & Extend Music. */
-function isUploadExtendedTrack(
-  filename: string,
-  tasks: Record<string, PersonaTaskMeta> | null
-): boolean {
-  if (!tasks) return false;
-  const parsed = parseSavedFilename(filename);
-  if (!parsed) return false;
-  const task = tasks[parsed.taskId];
-  return task?.isUploadExtension === true;
+function isUploadExtendedTrack(filename: string, tasks: Record<string, PersonaTaskMeta> | null): boolean {
+  return getTask(filename, tasks)?.isUploadExtension === true;
 }
 
-/** True if this track was created via Upload & Cover Music. */
-function isUploadCoveredTrack(
-  filename: string,
-  tasks: Record<string, PersonaTaskMeta> | null
-): boolean {
-  if (!tasks) return false;
-  const parsed = parseSavedFilename(filename);
-  if (!parsed) return false;
-  const task = tasks[parsed.taskId];
-  return task?.isUploadCover === true;
+function isUploadCoveredTrack(filename: string, tasks: Record<string, PersonaTaskMeta> | null): boolean {
+  return getTask(filename, tasks)?.isUploadCover === true;
 }
 
-/** True if this track was created via Add Instrumental. */
-function isAddInstrumentalTrack(
-  filename: string,
-  tasks: Record<string, PersonaTaskMeta> | null
-): boolean {
-  if (!tasks) return false;
-  const parsed = parseSavedFilename(filename);
-  if (!parsed) return false;
-  const task = tasks[parsed.taskId];
-  return task?.isAddInstrumental === true;
+function isAddInstrumentalTrack(filename: string, tasks: Record<string, PersonaTaskMeta> | null): boolean {
+  return getTask(filename, tasks)?.isAddInstrumental === true;
 }
 
-/** True if this track was created via Add Vocals. */
-function isAddVocalsTrack(
-  filename: string,
-  tasks: Record<string, PersonaTaskMeta> | null
-): boolean {
-  if (!tasks) return false;
-  const parsed = parseSavedFilename(filename);
-  if (!parsed) return false;
-  const task = tasks[parsed.taskId];
-  return task?.isAddVocals === true;
+function isAddVocalsTrack(filename: string, tasks: Record<string, PersonaTaskMeta> | null): boolean {
+  return getTask(filename, tasks)?.isAddVocals === true;
 }
 
-/** True if this track was created more than 14 days ago (expired on Suno servers). */
-function isExpiredTrack(
-  filename: string,
-  tasks: Record<string, PersonaTaskMeta> | null
-): boolean {
-  if (!tasks) return false;
-  const parsed = parseSavedFilename(filename);
-  if (!parsed) return false;
-  const task = tasks[parsed.taskId];
+function isSeparateVocalsTrack(filename: string, tasks: Record<string, PersonaTaskMeta> | null): boolean {
+  return getTask(filename, tasks)?.isSeparateVocals === true;
+}
+
+function isExpiredTrack(filename: string, tasks: Record<string, PersonaTaskMeta> | null): boolean {
+  const task = getTask(filename, tasks);
   if (!task?.createdAt) return false;
-  const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
-  return new Date(task.createdAt).getTime() < fourteenDaysAgo;
+  return new Date(task.createdAt).getTime() < Date.now() - FOURTEEN_DAYS_MS;
 }
 
-/** True if this track is instrumental (task-level flag or no audioId in metadata). */
-function isInstrumentalTrack(
-  filename: string,
-  tasks: Record<string, PersonaTaskMeta> | null
-): boolean {
-  if (!tasks) return false;
+function isInstrumentalTrack(filename: string, tasks: Record<string, PersonaTaskMeta> | null): boolean {
   const parsed = parseSavedFilename(filename);
   if (!parsed) return false;
-  const task = tasks[parsed.taskId];
+  const task = getTask(filename, tasks);
   if (!task) return false;
   if (task.instrumental === true) return true;
   const track = task.tracks?.[parsed.index - 1];
@@ -306,16 +299,19 @@ export function SavedTracksList({
   const isUploadCoverMode = selectionMode === "uploadCover";
   const isAddInstrumentalMode = selectionMode === "addInstrumental";
   const isAddVocalsMode = selectionMode === "addVocals";
+  const isSeparateVocalsMode = selectionMode === "separateVocals";
   const filesToShow = useMemo(
     () =>
       isPersonaMode
         ? filterVocalTracks(savedFiles, tasksEffective)
-        : isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode || isAddVocalsMode
-          ? filterAllTracks(savedFiles, tasksEffective)
-          : isExtendMode
-            ? filterRecentTracks(savedFiles, tasksEffective)
-            : savedFiles,
-    [isPersonaMode, isUploadExtendMode, isUploadCoverMode, isAddInstrumentalMode, isAddVocalsMode, isExtendMode, savedFiles, tasksEffective]
+        : isSeparateVocalsMode
+          ? filterSeparateVocalsTracks(savedFiles, tasksEffective)
+          : isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode || isAddVocalsMode
+            ? filterAllTracks(savedFiles, tasksEffective)
+            : isExtendMode
+              ? filterRecentTracks(savedFiles, tasksEffective)
+              : savedFiles,
+    [isPersonaMode, isSeparateVocalsMode, isUploadExtendMode, isUploadCoverMode, isAddInstrumentalMode, isAddVocalsMode, isExtendMode, savedFiles, tasksEffective]
   );
   const searchFilteredFiles = useMemo(() => {
     if (searchTaskIds === null) return filesToShow;
@@ -336,7 +332,7 @@ export function SavedTracksList({
 
   const fetchSavedFiles = useCallback(async () => {
     try {
-      const res = await fetch("/api/audio", { cache: "no-store" });
+      const res = await fetch("/api/audio");
       const data = await res.json();
       if (res.ok && Array.isArray(data.files)) {
         setSavedFiles(data.files);
@@ -507,17 +503,19 @@ export function SavedTracksList({
           <p className="text-sm text-gray-500">
             {isPersonaMode
               ? "No tracks with vocals to select."
-              : isUploadExtendMode
-                ? "No tracks to extend."
-                : isUploadCoverMode
-                  ? "No tracks to cover."
-                  : isAddInstrumentalMode
-                    ? "No tracks to add instrumental to."
-                    : isAddVocalsMode
-                      ? "No tracks to add vocals to."
-                      : isExtendMode
-                        ? "No tracks to extend. Only tracks from the last 14 days can be extended."
-                        : "No saved tracks yet. Generate music and use Download to save files."}
+              : isSeparateVocalsMode
+                ? "No tracks with vocals to separate. Select a track that has vocals (only tracks from the last 14 days can be separated)."
+                : isUploadExtendMode
+                  ? "No tracks to extend."
+                  : isUploadCoverMode
+                    ? "No tracks to cover."
+                    : isAddInstrumentalMode
+                      ? "No tracks to add instrumental to."
+                      : isAddVocalsMode
+                        ? "No tracks to add vocals to."
+                        : isExtendMode
+                          ? "No tracks to extend. Only tracks from the last 14 days can be extended."
+                          : "No saved tracks yet. Generate music and use Download to save files."}
           </p>
         ) : searchFilteredFiles.length === 0 ? (
           <p className="text-sm text-gray-500">
@@ -557,7 +555,7 @@ export function SavedTracksList({
                       </svg>
                     )}
                   </span>
-                  <span className="flex-1">{group.title}</span>
+                  <span className="flex-1">{stripStemPrefixFromTitle(group.title)}</span>
                 </button>
                 <ul
                   id={`group-${groupKey.replace(/[^a-z0-9]/gi, "-")}`}
@@ -573,7 +571,8 @@ export function SavedTracksList({
                     const uploadCovered = isUploadCoveredTrack(filename, tasksEffective);
                     const addInstrumental = isAddInstrumentalTrack(filename, tasksEffective);
                     const addVocals = isAddVocalsTrack(filename, tasksEffective);
-                    const expired = (isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode || isAddVocalsMode) && isExpiredTrack(filename, tasksEffective);
+                    const separateVocals = isSeparateVocalsTrack(filename, tasksEffective);
+                    const expired = (isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode || isAddVocalsMode || isSeparateVocalsMode) && isExpiredTrack(filename, tasksEffective);
                     return (
                       <li
                         key={filename}
@@ -581,6 +580,17 @@ export function SavedTracksList({
                       >
                         <span className="flex min-w-[7.5rem] shrink-0 items-center gap-1.5 text-sm text-gray-400">
                           {group.title === "Other" ? filename.replace(/\.mp3$/i, "") : trackLabel(index)}
+                          {separateVocals &&
+                            parsed &&
+                            (parsed.index === 2 || parsed.title.toLowerCase().includes("instrumental") ? (
+                              <span className="inline-flex shrink-0 text-amber-500" title="Instrumental" aria-label="Instrumental">
+                                <InstrumentalStemIcon />
+                              </span>
+                            ) : (parsed.index === 1 || parsed.title.toLowerCase().includes("vocal")) ? (
+                              <span className="inline-flex shrink-0 text-pink-400" title="Vocals" aria-label="Vocals">
+                                <VocalsStemIcon />
+                              </span>
+                            ) : null)}
                           {instrumental && (
                             <span
                               className="inline-flex shrink-0 text-amber-500"
@@ -644,6 +654,17 @@ export function SavedTracksList({
                             >
                               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.22.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+                              </svg>
+                            </span>
+                          )}
+                          {separateVocals && (
+                            <span
+                              className="inline-flex shrink-0 text-indigo-400"
+                              title="Separate Vocals"
+                              aria-label="Separate Vocals"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.242 4.242 3 3 0 004.242-4.242zm0-5.758a3 3 0 10-4.242 4.242 3 3 0 004.242-4.242z" />
                               </svg>
                             </span>
                           )}

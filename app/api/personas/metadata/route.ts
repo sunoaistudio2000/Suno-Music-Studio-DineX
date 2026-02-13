@@ -5,9 +5,7 @@ import type { PersonaTaskMeta, PersonaTrackMeta } from "@/app/types";
 export async function GET() {
   try {
     const tracks = await prisma.track.findMany({
-      where: {
-        taskId: { not: "" },
-      },
+      where: { taskId: { not: "" } },
       orderBy: [{ taskId: "asc" }, { index: "asc" }],
     });
     const tasks: Record<string, PersonaTaskMeta> = {};
@@ -26,7 +24,16 @@ export async function GET() {
     if (taskIds.length > 0) {
       const generations = await prisma.generation.findMany({
         where: { taskId: { in: taskIds } },
-        select: { taskId: true, instrumental: true, isExtension: true, uploadUrl: true, isUploadCover: true, isAddInstrumental: true, isAddVocals: true },
+        select: {
+          taskId: true,
+          instrumental: true,
+          isExtension: true,
+          uploadUrl: true,
+          isUploadCover: true,
+          isAddInstrumental: true,
+          isAddVocals: true,
+          isSeparateVocals: true,
+        },
       });
       for (const g of generations) {
         if (tasks[g.taskId]) {
@@ -36,10 +43,9 @@ export async function GET() {
             if (g.uploadUrl && !g.isUploadCover) tasks[g.taskId].isUploadExtension = true;
             if (g.isUploadCover) tasks[g.taskId].isUploadCover = true;
           }
-          if (g.isAddInstrumental)
-            tasks[g.taskId].isAddInstrumental = true;
-          if (g.isAddVocals)
-            tasks[g.taskId].isAddVocals = true;
+          if (g.isAddInstrumental) tasks[g.taskId].isAddInstrumental = true;
+          if (g.isAddVocals) tasks[g.taskId].isAddVocals = true;
+          if (g.isSeparateVocals) tasks[g.taskId].isSeparateVocals = true;
         }
       }
     }

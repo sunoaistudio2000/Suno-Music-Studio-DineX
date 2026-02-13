@@ -24,6 +24,10 @@ The Add Instrumental feature lets you transform your uploaded vocal or melody in
 #### 🎶 Add Vocals
 The Add Vocals feature lets you generate and layer AI vocals on top of an existing instrumental track. Simply upload your MP3 instrumental, provide a prompt describing the lyrics or mood, and set the title, tags, and weights to customize the result. The generated vocals are created directly on the server, allowing you to instantly listen to the transformation. This is perfect for experimenting with new arrangements, creating duets, or quickly producing professional-sounding tracks without needing a singer.
 
+#### 🎵 Separate Vocals and Instruments
+
+The Separate Vocals feature lets you split any music track into vocals and instrumental tracks. Simply upload your MP3, and the AI generates two clean tracks, one for vocals and one for instruments. You can listen to the original track alongside the separated versions instantly. This is perfect for karaoke, remixes, sample extraction, or exploring unique instrumentals, though sometimes unusual instruments, like the Armenian duduk, may appear in the vocal track due to AI interpretation.
+
 #### 👉 Links & Resources
 
 - [Suno](https://suno.com/)  
@@ -69,3 +73,5 @@ npm run dev
 📺 **Video:(Add Instrumental)** [Watch on YouTube](https://youtu.be/BybVzDB1Kdg) 
 
 📺 **Video:(Add Vocals)** [Watch on YouTube](https://youtu.be/9G6rNyPdW1w) 
+
+📺 **Video:(Extracting Vocals & Instruments)** [Watch on YouTube](https://youtu.be/tKOhS9KrCqo) 

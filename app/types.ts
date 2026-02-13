@@ -52,6 +52,8 @@ export type PersonaTaskMeta = {
   isAddInstrumental?: boolean;
   /** True when the track was created via Add Vocals. */
   isAddVocals?: boolean;
+  /** True when the track was created via Separate Vocals. */
+  isSeparateVocals?: boolean;
   /** ISO date string of when the earliest track in this task was created. */
   createdAt?: string;
 };
