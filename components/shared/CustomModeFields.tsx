@@ -23,6 +23,10 @@ type CustomModeFieldsProps = {
   radioGroupName?: string;
   /** Whether to show the Continue At field. Defaults to true. Set false for Generate Music. */
   showContinueAt?: boolean;
+  /** Hide the Negative Tags field (e.g. for Mashup). */
+  hideNegativeTags?: boolean;
+  /** Hide the Persona field (e.g. for Mashup). */
+  hidePersona?: boolean;
 };
 
 export function CustomModeFields({
@@ -30,6 +34,8 @@ export function CustomModeFields({
   idPrefix,
   radioGroupName,
   showContinueAt = true,
+  hideNegativeTags = false,
+  hidePersona = false,
 }: CustomModeFieldsProps) {
   const radioName = radioGroupName ?? `${idPrefix}VocalGender`;
 
@@ -135,24 +141,26 @@ export function CustomModeFields({
       </div>
 
       {/* Negative Tags */}
-      <div>
-        <div className="mb-1 flex items-center justify-between">
-          <label className="text-sm text-gray-400">Negative Tags</label>
-          <InfoHint
-            text="Exclude styles"
-            tooltip="Music styles or traits to exclude from the extended audio. Optional."
-            id={`${idPrefix}-negative-tags-tooltip`}
-            tooltipShiftRight={60}
+      {!hideNegativeTags && (
+        <div>
+          <div className="mb-1 flex items-center justify-between">
+            <label className="text-sm text-gray-400">Negative Tags</label>
+            <InfoHint
+              text="Exclude styles"
+              tooltip="Music styles or traits to exclude from the extended audio. Optional."
+              id={`${idPrefix}-negative-tags-tooltip`}
+              tooltipShiftRight={60}
+            />
+          </div>
+          <input
+            type="text"
+            value={fs.negativeTags}
+            onChange={(e) => fs.setNegativeTags(e.target.value)}
+            className={INPUT_CLASS}
+            placeholder="Heavy Metal, Upbeat Drums"
           />
         </div>
-        <input
-          type="text"
-          value={fs.negativeTags}
-          onChange={(e) => fs.setNegativeTags(e.target.value)}
-          className={INPUT_CLASS}
-          placeholder="Heavy Metal, Upbeat Drums"
-        />
-      </div>
+      )}
 
       {/* Vocal Gender (hidden when instrumental) */}
       {!fs.instrumental && (
@@ -185,8 +193,8 @@ export function CustomModeFields({
         </div>
       )}
 
-      {/* Persona (hidden when instrumental) */}
-      {!fs.instrumental && (
+      {/* Persona (hidden when instrumental or hidePersona) */}
+      {!hidePersona && !fs.instrumental && (
         <div>
           <div className="mb-1 flex items-center justify-between">
             <label className="text-sm text-gray-400">Persona</label>

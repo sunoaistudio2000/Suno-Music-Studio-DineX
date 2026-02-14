@@ -107,9 +107,10 @@ type SavedTracksListProps = {
    * - "addInstrumental": same as uploadCover (select track as source)
    * - "addVocals": same as addInstrumental (select track as source)
    * - "separateVocals": tracks with vocals (audioId), for stem separation
+   * - "mashup": show all tracks with select buttons (no delete)
    * - undefined: normal mode with delete buttons
    */
-  selectionMode?: "persona" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental" | "addVocals" | "separateVocals";
+  selectionMode?: "persona" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental" | "addVocals" | "separateVocals" | "mashup";
   /** When provided (e.g. from page), used instead of fetching; avoids duplicate requests. */
   personaMetadata?: Record<string, PersonaTaskMeta> | null;
   personas?: SavedPersona[];
@@ -244,6 +245,10 @@ function isSeparateVocalsTrack(filename: string, tasks: Record<string, PersonaTa
   return getTask(filename, tasks)?.isSeparateVocals === true;
 }
 
+function isMashupTrack(filename: string, tasks: Record<string, PersonaTaskMeta> | null): boolean {
+  return getTask(filename, tasks)?.isMashup === true;
+}
+
 function isExpiredTrack(filename: string, tasks: Record<string, PersonaTaskMeta> | null): boolean {
   const task = getTask(filename, tasks);
   if (!task?.createdAt) return false;
@@ -300,18 +305,21 @@ export function SavedTracksList({
   const isAddInstrumentalMode = selectionMode === "addInstrumental";
   const isAddVocalsMode = selectionMode === "addVocals";
   const isSeparateVocalsMode = selectionMode === "separateVocals";
+  const isMashupMode = selectionMode === "mashup";
   const filesToShow = useMemo(
     () =>
       isPersonaMode
         ? filterVocalTracks(savedFiles, tasksEffective)
         : isSeparateVocalsMode
           ? filterSeparateVocalsTracks(savedFiles, tasksEffective)
-          : isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode || isAddVocalsMode
-            ? filterAllTracks(savedFiles, tasksEffective)
-            : isExtendMode
-              ? filterRecentTracks(savedFiles, tasksEffective)
-              : savedFiles,
-    [isPersonaMode, isSeparateVocalsMode, isUploadExtendMode, isUploadCoverMode, isAddInstrumentalMode, isAddVocalsMode, isExtendMode, savedFiles, tasksEffective]
+          : isMashupMode
+            ? savedFiles
+            : isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode || isAddVocalsMode
+              ? filterAllTracks(savedFiles, tasksEffective)
+              : isExtendMode
+                ? filterRecentTracks(savedFiles, tasksEffective)
+                : savedFiles,
+    [isPersonaMode, isSeparateVocalsMode, isMashupMode, isUploadExtendMode, isUploadCoverMode, isAddInstrumentalMode, isAddVocalsMode, isExtendMode, savedFiles, tasksEffective]
   );
   const searchFilteredFiles = useMemo(() => {
     if (searchTaskIds === null) return filesToShow;
@@ -513,9 +521,11 @@ export function SavedTracksList({
                       ? "No tracks to add instrumental to."
                       : isAddVocalsMode
                         ? "No tracks to add vocals to."
-                        : isExtendMode
-                          ? "No tracks to extend. Only tracks from the last 14 days can be extended."
-                          : "No saved tracks yet. Generate music and use Download to save files."}
+                        : isMashupMode
+                          ? "No tracks to select."
+                          : isExtendMode
+                            ? "No tracks to extend. Only tracks from the last 14 days can be extended."
+                            : "No saved tracks yet. Generate music and use Download to save files."}
           </p>
         ) : searchFilteredFiles.length === 0 ? (
           <p className="text-sm text-gray-500">
@@ -572,7 +582,8 @@ export function SavedTracksList({
                     const addInstrumental = isAddInstrumentalTrack(filename, tasksEffective);
                     const addVocals = isAddVocalsTrack(filename, tasksEffective);
                     const separateVocals = isSeparateVocalsTrack(filename, tasksEffective);
-                    const expired = (isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode || isAddVocalsMode || isSeparateVocalsMode) && isExpiredTrack(filename, tasksEffective);
+                    const mashup = isMashupTrack(filename, tasksEffective);
+                    const expired = (isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode || isAddVocalsMode || isSeparateVocalsMode || isMashupMode) && isExpiredTrack(filename, tasksEffective);
                     return (
                       <li
                         key={filename}
@@ -665,6 +676,17 @@ export function SavedTracksList({
                             >
                               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.242 4.242 3 3 0 004.242-4.242zm0-5.758a3 3 0 10-4.242 4.242 3 3 0 004.242-4.242z" />
+                              </svg>
+                            </span>
+                          )}
+                          {mashup && (
+                            <span
+                              className="inline-flex shrink-0 text-cyan-400"
+                              title="Mashup"
+                              aria-label="Mashup"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                               </svg>
                             </span>
                           )}

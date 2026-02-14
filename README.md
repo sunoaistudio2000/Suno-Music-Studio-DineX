@@ -28,6 +28,10 @@ The Add Vocals feature lets you generate and layer AI vocals on top of an existi
 
 The Separate Vocals feature lets you split any music track into vocals and instrumental tracks. Simply upload your MP3, and the AI generates two clean tracks, one for vocals and one for instruments. You can listen to the original track alongside the separated versions instantly. This is perfect for karaoke, remixes, sample extraction, or exploring unique instrumentals, though sometimes unusual instruments, like the Armenian duduk, may appear in the vocal track due to AI interpretation.
 
+####  🎵 AI-Generated Music Mashups
+
+The AI-generated mashup feature lets you combine multiple audio tracks into a single, creative mix. Simply provide a prompt, style, and weights, and upload your tracks—either previously generated or any tracks you want. The AI uses the prompt to guide the style and lyrical direction, especially when Custom Mode is off, rather than specifying exact lyrics.
+
 #### 👉 Links & Resources
 
 - [Suno](https://suno.com/)  
@@ -75,3 +79,5 @@ npm run dev
 📺 **Video:(Add Vocals)** [Watch on YouTube](https://youtu.be/9G6rNyPdW1w) 
 
 📺 **Video:(Extracting Vocals & Instruments)** [Watch on YouTube](https://youtu.be/tKOhS9KrCqo) 
+
+📺 **Video:(Generating Music Mashups)** [Watch on YouTube](https://youtu.be/CtMHrjQKC9c) 

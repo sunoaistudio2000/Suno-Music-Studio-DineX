@@ -6,6 +6,7 @@ import { Toggle } from "@/components/shared/Toggle";
 import { CustomModeFields } from "@/components/shared/CustomModeFields";
 import { useExtendFormState } from "@/hooks/useExtendFormState";
 import { INPUT_CLASS } from "@/lib/generation-constants";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 type GenerateFormProps = {
   statusState: StatusState;
@@ -70,11 +71,7 @@ export function GenerateForm({ statusState, setStatusState, loadTaskId, resetKey
       });
       const data = await res.json();
       if (!res.ok) {
-        const credits = res.status === 402 || data.code === 402;
-        const fallback = credits ? "Your balance isn't enough to run this request. Please top up to continue." : "Generation failed";
-        const displayMessage = data.error ?? data.message ?? data.msg ?? fallback;
-        const msg = typeof displayMessage === "string" ? displayMessage : "Generation failed";
-        setStatusState({ taskId: "", status: "ERROR", tracks: [], error: msg });
+        setStatusState({ taskId: "", status: "ERROR", tracks: [], error: getApiErrorMessage(res, data, "Generation failed") });
         return;
       }
       const taskId = data.taskId;

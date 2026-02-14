@@ -33,6 +33,7 @@ export async function GET() {
           isAddInstrumental: true,
           isAddVocals: true,
           isSeparateVocals: true,
+          isMashup: true,
         },
       });
       for (const g of generations) {
@@ -46,6 +47,7 @@ export async function GET() {
           if (g.isAddInstrumental) tasks[g.taskId].isAddInstrumental = true;
           if (g.isAddVocals) tasks[g.taskId].isAddVocals = true;
           if (g.isSeparateVocals) tasks[g.taskId].isSeparateVocals = true;
+          if (g.isMashup) tasks[g.taskId].isMashup = true;
         }
       }
     }

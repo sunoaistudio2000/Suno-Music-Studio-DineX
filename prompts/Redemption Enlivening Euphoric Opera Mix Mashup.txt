@@ -1,0 +1,62 @@
+Title: Redemption Enlivening Euphoric Opera Mix
+
+Prompt:
+[Intro]
+(Atmospheric pads, distant operatic hum, building 128 BPM pulse)
+
+[Verse 1: Airy Operatic Vocal]
+Walking the line where the shadows meet the light
+A soul in suspension, lost in the night
+Every step is a whisper of what used to be
+Searching for the road that will set the spirit free
+
+[Build-up: Rising Synth Energy]
+[Energy: Rising]
+The rhythm is waking, the pulse starts to beat
+(Enlivening... Enlivening...)
+
+[Chorus: Power Soprano over Dance Beat]
+[Energy: High]
+On the Redemption Road, we rise through the flame
+Enlivening the heart, we're never the same
+Break through the silence, let the anthem soar
+We aren't lost in the echoes anymore!
+
+[Verse 2: Staccato Electronic Vocal Style]
+Now the colors are bleeding through the grey
+The gravity of yesterday is falling away
+From the silence of stones to the thunder of stars
+We’re healing the wounds and we’re wearing the scars
+
+[Bridge: Dramatic Orchestral Breakdown]
+[Tempo: Half-time]
+(Deep operatic chant)
+Gloria... In Excelsis...
+(Beat stops, sudden silence)
+[Pause]
+[Energy: Exploding]
+NOW!
+
+[Chorus: Maximum Power]
+On the Redemption Road, we rise through the flame
+Enlivening the heart, we're never the same
+Break through the silence, let the anthem soar
+We aren't lost in the echoes anymore!
+
+[Outro: Progressive House Melodies]
+Redemption...
+Enlivening...
+(Fading out with a final operatic high note)
+[End]
+
+Model: V5
+
+Vocal Gender: Duet
+
+Style:	Progressive House, Operatic Soprano, 128 BPM, Euphoric, Cinematic Orchestral layers, Sidechained Synth Bass, High Fidelity, Dramatic climax, Four-on-the-floor beat
+
+Style Weight:	0.6	
+
+Weirdness:	0.35
+
+Audio Weight:	0.7

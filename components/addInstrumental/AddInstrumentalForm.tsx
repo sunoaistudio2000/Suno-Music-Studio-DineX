@@ -6,7 +6,8 @@ import { StyledAudioPlayer } from "@/components/StyledAudioPlayer";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { useAddInstrumentalFormState, ADD_INSTRUMENTAL_MODELS } from "@/hooks/useAddInstrumentalFormState";
 import { useUploadSource } from "@/hooks/useUploadSource";
-import { INPUT_CLASS, SELECT_CLASS, NUMBER_WRAPPER_CLASS, STEPPER_BTN, clampStep } from "@/lib/generation-constants";
+import { INPUT_CLASS, SELECT_CLASS, NUMBER_WRAPPER_CLASS, STEPPER_BTN, clampStep, BTN_CLASS } from "@/lib/generation-constants";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { PlusIcon, MinusIcon } from "@/components/shared/FormIcons";
 
 type AddInstrumentalFormProps = {
@@ -18,9 +19,6 @@ type AddInstrumentalFormProps = {
   loadTaskId?: string | null;
   resetKey?: number;
 };
-
-const BTN_CLASS =
-  "flex items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:border-blue-600/50 hover:bg-blue-950/30 hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#1a1a1a] disabled:opacity-50";
 
 export function AddInstrumentalForm({
   statusState,
@@ -81,14 +79,7 @@ export function AddInstrumentalForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        const credits = res.status === 402 || data.code === 402;
-        const fallback = credits
-          ? "Your balance isn't enough to run this request. Please top up to continue."
-          : "Add instrumental failed";
-        const displayMessage = data.error ?? data.message ?? data.msg ?? fallback;
-        const msg =
-          typeof displayMessage === "string" ? displayMessage : "Add instrumental failed";
-        setStatusState({ taskId: "", status: "ERROR", tracks: [], error: msg });
+        setStatusState({ taskId: "", status: "ERROR", tracks: [], error: getApiErrorMessage(res, data, "Add instrumental failed") });
         return;
       }
       const taskId = data.taskId;
@@ -133,7 +124,7 @@ export function AddInstrumentalForm({
                 text="Upload vocals or stems"
                 tooltip="Choose an MP3 file (vocals or melody) or select a saved track, then click Upload. The Add Instrumental button is enabled only after a successful upload."
                 id="add-instrumental-source-tooltip"
-                tooltipShiftRight={60}
+                tooltipCenter
               />
             </div>
             <div className="flex items-center gap-3">

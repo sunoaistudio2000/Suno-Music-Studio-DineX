@@ -12,11 +12,12 @@ import { UploadCoverSection } from "@/components/uploadCover/UploadCoverSection"
 import { AddInstrumentalSection } from "@/components/addInstrumental/AddInstrumentalSection";
 import { AddVocalsSection } from "@/components/addVocals/AddVocalsSection";
 import { SeparateVocalsSection } from "@/components/separateVocals/SeparateVocalsSection";
+import { MashupSection } from "@/components/mashup/MashupSection";
 import { CreatePersonaSection } from "@/components/persona/CreatePersonaSection";
 import { PersonasList } from "@/components/persona/PersonasList";
 import { AppTitleWithLogo } from "@/components/shared/AppTitle";
 
-export type AppMode = "generate" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental" | "addVocals" | "separateVocals" | "persona";
+export type AppMode = "generate" | "mashup" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental" | "addVocals" | "separateVocals" | "persona";
 
 const MODE_OPTIONS: { value: AppMode; label: string }[] = [
   { value: "generate", label: "Generate Music" },
@@ -27,6 +28,7 @@ const MODE_OPTIONS: { value: AppMode; label: string }[] = [
   { value: "addVocals", label: "Add Vocals" },
   { value: "separateVocals", label: "Separate Vocals" },
   { value: "persona", label: "Generate Persona" },
+  { value: "mashup", label: "Mashup" },
 ];
 
 const MODE_STORAGE_KEY = "suno-mode";
@@ -73,6 +75,12 @@ export default function Home() {
 
   const [separateVocalsStatusState, setSeparateVocalsStatusState] = useState<StatusState>(null);
 
+  const [mashupStatusState, setMashupStatusState] = useState<StatusState>(null);
+  const [mashupResetKey, setMashupResetKey] = useState(0);
+  const [mashupSelectingForSlot, setMashupSelectingForSlot] = useState<1 | 2>(1);
+  const [mashupSlot1Filename, setMashupSlot1Filename] = useState<string | null>(null);
+  const [mashupSlot2Filename, setMashupSlot2Filename] = useState<string | null>(null);
+
   const handleNewGeneration = useCallback(() => {
     // Stop all playing audio and reset to start
     document.querySelectorAll("audio").forEach((el) => {
@@ -96,6 +104,14 @@ export default function Home() {
     setSelectedAudioFilename(null);
     setSelectedViewPersonaId(personaId);
   }, []);
+
+  const handleMashupTrackSelect = useCallback(
+    (filename: string | null) => {
+      if (mashupSelectingForSlot === 1) setMashupSlot1Filename(filename);
+      else setMashupSlot2Filename(filename);
+    },
+    [mashupSelectingForSlot]
+  );
 
   // Resolve audioId from persona metadata for the extend feature
   const resolveAudioId = useCallback(
@@ -249,11 +265,17 @@ export default function Home() {
         </div>
 
         <SavedTracksList
-          selectedFilename={selectedAudioFilename}
+          selectedFilename={
+            mode === "mashup"
+              ? (mashupSelectingForSlot === 1 ? mashupSlot1Filename : mashupSlot2Filename)
+              : selectedAudioFilename
+          }
           onSelectFilename={
             mode === "persona"
               ? handlePersonaTrackSelect
-              : setSelectedAudioFilename
+              : mode === "mashup"
+                ? handleMashupTrackSelect
+                : setSelectedAudioFilename
           }
           selectionMode={
             mode === "persona" ? "persona"
@@ -263,14 +285,15 @@ export default function Home() {
                     : mode === "addInstrumental" ? "addInstrumental"
                       : mode === "addVocals" ? "addVocals"
                         : mode === "separateVocals" ? "separateVocals"
-                          : undefined
+                          : mode === "mashup" ? "mashup"
+                            : undefined
           }
           personaMetadata={personaTasks}
           personas={personaList}
           showLoadFormRadio={mode === "generate"}
           selectedLoadFormFilename={mode === "generate" ? loadFormSelectedFilename : null}
           onSelectLoadFormFilename={mode === "generate" ? setLoadFormSelectedFilename : undefined}
-          showSearch={mode === "generate" || mode === "persona" || mode === "extend" || mode === "uploadExtend" || mode === "uploadCover" || mode === "addInstrumental" || mode === "addVocals" || mode === "separateVocals"}
+          showSearch={mode === "generate" || mode === "mashup" || mode === "persona" || mode === "extend" || mode === "uploadExtend" || mode === "uploadCover" || mode === "addInstrumental" || mode === "addVocals" || mode === "separateVocals"}
           onNewGeneration={
             mode === "generate"
               ? handleNewGeneration
@@ -298,6 +321,25 @@ export default function Home() {
             />
             <GenerationStatus statusState={statusState} />
           </>
+        )}
+        {mode === "mashup" && (
+          <MashupSection
+            statusState={mashupStatusState}
+            setStatusState={setMashupStatusState}
+            resetKey={mashupResetKey}
+            selectingForSlot={mashupSelectingForSlot}
+            onSelectingForSlotChange={setMashupSelectingForSlot}
+            slot1SelectedFilename={mashupSlot1Filename}
+            slot2SelectedFilename={mashupSlot2Filename}
+            slot1SelectedTrackName={
+              mashupSlot1Filename ? parseSavedFilename(mashupSlot1Filename)?.title ?? mashupSlot1Filename : null
+            }
+            slot2SelectedTrackName={
+              mashupSlot2Filename ? parseSavedFilename(mashupSlot2Filename)?.title ?? mashupSlot2Filename : null
+            }
+            onClearSlot1={() => setMashupSlot1Filename(null)}
+            onClearSlot2={() => setMashupSlot2Filename(null)}
+          />
         )}
         {mode === "extend" && (
           <ExtendSection

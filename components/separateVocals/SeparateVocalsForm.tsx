@@ -6,6 +6,7 @@ import { IN_PROGRESS_STATUSES } from "@/app/types";
 import { InfoHint } from "@/components/shared/InfoHint";
 import { parseSavedFilename } from "@/components/SavedTracksList";
 import { useSeparateVocalsFormState } from "@/hooks/useSeparateVocalsFormState";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 type SeparateVocalsFormProps = {
   statusState: StatusState;
@@ -61,22 +62,7 @@ export function SeparateVocalsForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        const credits = res.status === 402 || data.code === 402;
-        const fallback = credits
-          ? "Your balance isn't enough to run this request. Please top up to continue."
-          : "Separate vocals failed";
-        const displayMessage =
-          data.error ?? data.message ?? data.msg ?? fallback;
-        const msg =
-          typeof displayMessage === "string"
-            ? displayMessage
-            : "Separate vocals failed";
-        setStatusState({
-          taskId: "",
-          status: "ERROR",
-          tracks: [],
-          error: msg,
-        });
+        setStatusState({ taskId: "", status: "ERROR", tracks: [], error: getApiErrorMessage(res, data, "Separate vocals failed") });
         return;
       }
       const taskId = data.taskId;

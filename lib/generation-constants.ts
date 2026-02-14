@@ -49,3 +49,7 @@ export const NUMBER_WRAPPER_CLASS =
   "flex rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500";
 export const STEPPER_BTN =
   "flex flex-1 items-center justify-center px-2 text-[#f5f5f5] hover:bg-[#2a2a2a]";
+
+/** Shared button class for file picker and similar secondary actions. */
+export const BTN_CLASS =
+  "flex items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:border-blue-600/50 hover:bg-blue-950/30 hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#1a1a1a] disabled:opacity-50";

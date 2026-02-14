@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { parseKieResponse } from "@/lib/api-error";
+import { getCallbackUrl } from "@/lib/api-callback";
 import { validateRequired } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
 
@@ -10,11 +11,6 @@ export type SeparateVocalsBody = {
   taskId: string;
   audioId: string;
 };
-
-function getCallbackUrl(): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  return `${base.replace(/\/$/, "")}/api/suno-callback`;
-}
 
 export async function POST(request: NextRequest) {
   const token = await getToken({

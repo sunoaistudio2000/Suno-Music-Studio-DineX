@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { PersonaTaskMeta, PersonaTrackMeta, SavedPersona } from "@/app/types";
 import { parseSavedFilename } from "@/components/SavedTracksList";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 type EligibleTrack = { taskId: string; track: PersonaTrackMeta };
 
@@ -13,8 +14,6 @@ function isCreditsError(err: string): boolean {
 
 const FORM_INPUT_CLASS =
   "w-full rounded border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-80 disabled:bg-[#1a1a1a] disabled:border-[#2a2a2a]";
-const CREDITS_FALLBACK = "Your balance isn't enough. Please top up to continue.";
-const CREATE_PERSONA_FAILED = "Create Persona failed";
 
 function PersonIcon({ className }: { className?: string }) {
   return (
@@ -172,10 +171,7 @@ export function CreatePersonaSection({
       });
       const data = await res.json();
       if (!res.ok) {
-        const credits = res.status === 402 || data.code === 402;
-        const msg =
-          data.error ?? data.message ?? data.msg ?? (credits ? CREDITS_FALLBACK : CREATE_PERSONA_FAILED);
-        throw new Error(typeof msg === "string" ? msg : CREATE_PERSONA_FAILED);
+        throw new Error(getApiErrorMessage(res, data, "Create Persona failed"));
       }
       setDescription("");
       window.dispatchEvent(new CustomEvent("persona-created"));
