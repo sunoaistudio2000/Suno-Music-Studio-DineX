@@ -18,6 +18,7 @@ export async function GET() {
         title: t.title,
       };
       if (t.audioId) meta.id = t.audioId;
+      if (t.videoFilename) meta.hasVideo = true;
       tasks[t.taskId].tracks.push(meta);
     }
     const taskIds = Object.keys(tasks);

@@ -33,6 +33,9 @@ The AI-generated mashup feature lets you combine multiple audio tracks into a si
 #### 🎵 Get & Generate Song Lyrics + Covers
 Easily get lyrics, create lyrics and cover art for your tracks.
 
+#### 🎵  Music Video Visualizer: Rotating Vinyl with Lyrics
+Created dynamic music videos from generated tracks with simple yet engaging visualizations. The video features a rotating vinyl record synchronized with the song’s lyrics, bringing the music to life visually.
+
 #### 👉 Links & Resources
 
 - [Suno](https://suno.com/)  
@@ -84,3 +87,5 @@ npm run dev
 📺 **Video:(Generating Music Mashups)** [Watch on YouTube](https://youtu.be/CtMHrjQKC9c) 
 
 📺 **Video:(Get & Generate Song Lyrics + Covers)** [Watch on YouTube](https://youtu.be/kkwSlLig78Q) 
+
+📺 **Video:(Animated Music Video Visualizer)** [Watch on YouTube](https://youtu.be/1rmYvJFBX7I) 

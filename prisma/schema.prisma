@@ -75,17 +75,19 @@ model Generation {
 }
 
 model Track {
-  id             String     @id @default(auto()) @map("_id") @db.ObjectId
-  generationId   String?    @db.ObjectId
-  taskId         String
-  audioId        String?
-  title          String
-  index          Int        // 1-based
-  audioUrl       String?
-  expiresAt      DateTime?
-  localFilename  String?    // e.g. taskId-1-Title.mp3 for playback after save
-  createdAt      DateTime   @default(now())
-  generation     Generation? @relation(fields: [generationId], references: [id], onDelete: SetNull)
+  id              String     @id @default(auto()) @map("_id") @db.ObjectId
+  generationId    String?    @db.ObjectId
+  taskId          String
+  audioId         String?
+  title           String
+  index           Int        // 1-based
+  audioUrl        String?
+  expiresAt       DateTime?
+  localFilename   String?    // e.g. taskId-1-Title.mp3 for playback after save
+  videoTaskId     String?    // kie.ai video generation task ID
+  videoFilename   String?    // local filename in audio/ (e.g. taskId-1-title.mp4)
+  createdAt       DateTime   @default(now())
+  generation      Generation? @relation(fields: [generationId], references: [id], onDelete: SetNull)
 }
 
 model Persona {

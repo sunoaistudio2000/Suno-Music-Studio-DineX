@@ -34,6 +34,8 @@ export type PersonaTrackMeta = {
   id?: string;
   audio_url: string;
   title: string;
+  /** True when a music video has been generated for this track. */
+  hasVideo?: boolean;
 };
 
 /** Task-level metadata stored for later Generate Persona use. */

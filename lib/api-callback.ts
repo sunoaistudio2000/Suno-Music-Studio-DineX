@@ -9,3 +9,10 @@ export function getCoverCallbackUrl(): string {
   const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   return `${base.replace(/\/$/, "")}/api/cover-callback`;
 }
+
+/** Callback URL for music video generation completion.
+ * Must be publicly accessible (KIE cannot reach localhost). Use ngrok or deploy for callbacks. */
+export function getVideoCallbackUrl(): string {
+  const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  return `${base.replace(/\/$/, "")}/api/video-callback`;
+}

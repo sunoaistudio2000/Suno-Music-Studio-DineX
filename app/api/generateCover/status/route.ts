@@ -69,7 +69,8 @@ export async function GET(request: NextRequest) {
     images = data.images as string[];
   }
 
-  const parentTaskId = typeof apiData?.parentTaskId === "string" ? apiData.parentTaskId : null;
+  let parentTaskId = typeof apiData?.parentTaskId === "string" ? apiData.parentTaskId : null;
+  if (typeof apiData?.parent_task_id === "string") parentTaskId = apiData.parent_task_id;
 
   // Also treat status string "SUCCESS" as success (some APIs return this)
   const statusStr = (typeof apiData?.status === "string" ? apiData.status : null) ?? (typeof data?.status === "string" ? data.status : null);
@@ -77,12 +78,24 @@ export async function GET(request: NextRequest) {
 
   let savedCoverImages: string[] = [];
   const isSuccess = successFlag === SUCCESS_FLAG || isSuccessByStatus;
-  if (isSuccess && images.length > 0 && parentTaskId) {
-    const generation = await prisma.generation.findFirst({
-      where: { userId: token.sub, taskId: parentTaskId },
-      orderBy: { createdAt: "desc" },
-    });
-    if (generation) {
+  if (isSuccess && images.length > 0) {
+    let generation = parentTaskId
+      ? await prisma.generation.findFirst({
+          where: { userId: token.sub, taskId: parentTaskId },
+          orderBy: { createdAt: "desc" },
+        })
+      : null;
+
+    // Fallback: find Generation by coverTaskId (we store it when creating)
+    if (!generation) {
+      generation = await prisma.generation.findFirst({
+        where: { userId: token.sub, coverTaskId: coverTaskId.trim() },
+        orderBy: { createdAt: "desc" },
+      });
+      if (generation) parentTaskId = generation.taskId;
+    }
+
+    if (generation && parentTaskId) {
       try {
         savedCoverImages = await downloadAndSaveCoverImages(parentTaskId, images, apiKey);
         if (savedCoverImages.length > 0) {
@@ -91,7 +104,8 @@ export async function GET(request: NextRequest) {
             data: { coverTaskId: coverTaskId.trim(), coverImages: savedCoverImages },
           });
         }
-      } catch {
+      } catch(e) {
+        console.error("Error downloading and saving cover images", e);
         // Continue - we still return the API data; images may be in DB from callback
       }
     }

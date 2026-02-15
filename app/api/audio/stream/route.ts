@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
-import { AUDIO_DIR, isSafeFilename, isSafeCoverFilename } from "@/lib/audio";
+import { AUDIO_DIR, isSafeFilename, isSafeCoverFilename, isSafeVideoFilename } from "@/lib/audio";
 
 /** Parse Range header "bytes=start-end" or "bytes=start-". Returns { start, end } or null. */
 function parseRange(rangeHeader: string | null, totalLength: number): { start: number; end: number } | null {
@@ -21,7 +21,7 @@ function parseRange(rangeHeader: string | null, totalLength: number): { start: n
 
 export async function GET(request: NextRequest) {
   const filename = request.nextUrl.searchParams.get("filename");
-  if (!filename || (!isSafeFilename(filename) && !isSafeCoverFilename(filename))) {
+  if (!filename || (!isSafeFilename(filename) && !isSafeCoverFilename(filename) && !isSafeVideoFilename(filename))) {
     return NextResponse.json({ error: "Invalid or missing filename" }, { status: 400 });
   }
 
@@ -31,7 +31,8 @@ export async function GET(request: NextRequest) {
   }
 
   const isCover = filename.endsWith(".png");
-  const contentType = isCover ? "image/png" : "audio/mpeg";
+  const isVideo = filename.endsWith(".mp4");
+  const contentType = isCover ? "image/png" : isVideo ? "video/mp4" : "audio/mpeg";
 
   try {
     const buffer = await readFile(filePath);
