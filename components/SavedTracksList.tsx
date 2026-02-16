@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useSession } from "next-auth/react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { StyledAudioPlayer } from "@/components/StyledAudioPlayer";
@@ -87,12 +88,173 @@ function flattenAndRegroup(
   return Object.values(byKey);
 }
 
+/** Track type filter options with icons and colors. */
+const TRACK_TYPE_FILTER_OPTIONS = [
+  { value: "all", label: "All", icon: "grid", color: "text-gray-400" },
+  { value: "generated", label: "Generated", icon: "generated", color: "text-amber-400" },
+  { value: "extended", label: "Extended", icon: "extend", color: "text-purple-400" },
+  { value: "mashup", label: "Mashup", icon: "mashup", color: "text-cyan-400" },
+  { value: "uploadExtend", label: "Upload & Extend", icon: "uploadExtend", color: "text-teal-400" },
+  { value: "uploadCover", label: "Upload & Cover", icon: "uploadCover", color: "text-sky-400" },
+  { value: "generateCover", label: "Generate Cover", icon: "generateCover", color: "text-emerald-400" },
+  { value: "createMusicVideo", label: "Create Music Video", icon: "createMusicVideo", color: "text-blue-400" },
+  { value: "addInstrumental", label: "Add Instrumental", icon: "addInstrumental", color: "text-orange-300" },
+  { value: "addVocals", label: "Add Vocals", icon: "addVocals", color: "text-pink-400" },
+  { value: "separateVocals", label: "Separate Vocals", icon: "separateVocals", color: "text-indigo-400" },
+  { value: "shared", label: "Shared", icon: "shared", color: "text-emerald-400" },
+] as const;
+
+export type TrackTypeFilterValue = (typeof TRACK_TYPE_FILTER_OPTIONS)[number]["value"];
+
+function filterByTrackType(
+  files: string[],
+  typeFilter: TrackTypeFilterValue,
+  tasks: Record<string, PersonaTaskMeta> | null,
+  sharedMap: Record<string, boolean>
+): string[] {
+  if (typeFilter === "all") return files;
+  if (typeFilter === "shared") return files.filter((f) => sharedMap[f] === true);
+  if (!tasks || Object.keys(tasks).length === 0) return files;
+  return files.filter((filename) => {
+    if (typeFilter === "generated") return isGeneratedTrack(filename, tasks);
+    if (typeFilter === "extended") return isExtendedTrack(filename, tasks);
+    if (typeFilter === "mashup") return isMashupTrack(filename, tasks);
+    if (typeFilter === "uploadExtend") return isUploadExtendedTrack(filename, tasks);
+    if (typeFilter === "uploadCover") return isUploadCoveredTrack(filename, tasks);
+    if (typeFilter === "generateCover") return hasCoverImage(filename, tasks);
+    if (typeFilter === "createMusicVideo") return hasVideo(filename, tasks);
+    if (typeFilter === "addInstrumental") return isAddInstrumentalTrack(filename, tasks);
+    if (typeFilter === "addVocals") return isAddVocalsTrack(filename, tasks);
+    if (typeFilter === "separateVocals") return isSeparateVocalsTrack(filename, tasks);
+    return true;
+  });
+}
+
+function TrackTypeFilterIcon({ icon, color = "text-gray-400" }: { icon: string; color?: string }) {
+  const cls = `h-4 w-4 shrink-0 ${color}`;
+  if (icon === "grid")
+    return (
+      <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+      </svg>
+    );
+  if (icon === "generated")
+    return (
+      <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+      </svg>
+    );
+  if (icon === "extend")
+    return (
+      <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+      </svg>
+    );
+  if (icon === "mashup")
+    return (
+      <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+      </svg>
+    );
+  if (icon === "uploadExtend")
+    return (
+      <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+      </svg>
+    );
+  if (icon === "uploadCover")
+    return (
+      <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+      </svg>
+    );
+  if (icon === "generateCover")
+    return (
+      <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    );
+  if (icon === "createMusicVideo")
+    return (
+      <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+      </svg>
+    );
+  if (icon === "addInstrumental")
+    return (
+      <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+      </svg>
+    );
+  if (icon === "addVocals")
+    return (
+      <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.22.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+      </svg>
+    );
+  if (icon === "separateVocals")
+    return (
+      <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.242 4.242 3 3 0 004.242-4.242zm0-5.758a3 3 0 10-4.242 4.242 3 3 0 004.242-4.242z" />
+      </svg>
+    );
+  if (icon === "shared")
+    return (
+      <svg className={cls} fill="currentColor" viewBox="0 0 24 24">
+        <path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+      </svg>
+    );
+  return null;
+}
+
 const SELECT_BTN_BASE =
   "flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0f0f0f]";
 export const SELECT_BTN_SELECTED = `${SELECT_BTN_BASE} border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500`;
 export const SELECT_BTN_UNSELECTED = `${SELECT_BTN_BASE} border-[#2a2a2a] bg-[#1a1a1a] text-gray-400 hover:border-blue-600/50 hover:bg-blue-950/30 hover:text-blue-400 focus:ring-blue-500`;
 export const DELETE_BTN_CLASS =
   "flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-red-900/50 bg-red-950/30 text-red-400 transition-colors hover:border-red-600/50 hover:bg-red-950/50 hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-[#0f0f0f] disabled:opacity-50";
+
+const SHARE_BTN_CLASS =
+  "flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0f0f0f] disabled:opacity-50";
+
+function ShareButton({
+  filename,
+  isShared,
+  isUpdating,
+  onShareToggle,
+}: {
+  filename: string;
+  isShared: boolean;
+  isUpdating: boolean;
+  onShareToggle: (filename: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={isUpdating}
+      onClick={() => onShareToggle(filename)}
+      className={
+        isShared
+          ? "flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-emerald-600/50 bg-emerald-950/30 text-emerald-400 transition-colors hover:border-emerald-500 hover:bg-emerald-950/50 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-[#0f0f0f] disabled:opacity-50"
+          : "flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-gray-400 transition-colors hover:border-blue-600/50 hover:bg-blue-950/30 hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#0f0f0f] disabled:opacity-50"
+      }
+      title={isShared ? "Shared – click to unshare" : "Share"}
+      aria-label={isUpdating ? "Updating…" : isShared ? "Shared – click to unshare" : "Share"}
+    >
+      {isUpdating ? (
+        <span className="text-xs">…</span>
+      ) : isShared ? (
+        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+        </svg>
+      ) : (
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+        </svg>
+      )}
+    </button>
+  );
+}
 
 type SavedTracksListProps = {
   selectedFilename?: string | null;
@@ -111,9 +273,12 @@ type SavedTracksListProps = {
    * - "generateLyrics": all tracks, no select/delete buttons (read-only list)
    * - "generateCover": all tracks with metadata, select track to generate cover image
    * - "createMusicVideo": tracks with audioId, select track to create music video
+   * - "shared": only shared tracks, share button only (no select, no delete)
    * - undefined: normal mode with delete buttons
    */
-  selectionMode?: "persona" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental" | "addVocals" | "separateVocals" | "mashup" | "getLyrics" | "generateLyrics" | "generateCover" | "createMusicVideo";
+  selectionMode?: "persona" | "extend" | "uploadExtend" | "uploadCover" | "addInstrumental" | "addVocals" | "separateVocals" | "mashup" | "getLyrics" | "generateLyrics" | "generateCover" | "createMusicVideo" | "shared";
+  /** Override section title (e.g. "Shared Music" for shared mode). */
+  sectionTitle?: string;
   /** When provided (e.g. from page), used instead of fetching; avoids duplicate requests. */
   personaMetadata?: Record<string, PersonaTaskMeta> | null;
   personas?: SavedPersona[];
@@ -126,6 +291,10 @@ type SavedTracksListProps = {
   showSearch?: boolean;
   /** Called when user clicks "New Generation" — resets form, pauses all audio, scrolls to form. */
   onNewGeneration?: () => void;
+  /** When true, show a share button before delete (Generate Music mode only). */
+  showShareButton?: boolean;
+  /** Called when track type filter changes. Use to hide form panels when filter is not "all". */
+  onTrackTypeFilterChange?: (filter: string) => void;
 };
 
 /** When showSelection is true, only include vocal files (exclude instrumental tracks).
@@ -146,9 +315,8 @@ function filterVocalTracks(
   });
 }
 
-/** For extend mode, show tracks whose taskId exists in metadata.
- * When metadata is null or empty, show all files so tracks are visible while metadata loads. */
-function filterRecentTracks(
+/** Filter files by taskId in metadata. When metadata is null or empty, show all files. */
+function filterByTaskMetadata(
   files: string[],
   tasks: Record<string, PersonaTaskMeta> | null
 ): string[] {
@@ -157,55 +325,6 @@ function filterRecentTracks(
     const parsed = parseSavedFilename(filename);
     if (!parsed) return false;
     return Boolean(tasks[parsed.taskId]);
-  });
-}
-
-/** For uploadExtend mode, show ALL tracks whose taskId exists in metadata (no date filter).
- * When metadata is null or empty, show all files so tracks are visible while metadata loads. */
-function filterAllTracks(
-  files: string[],
-  tasks: Record<string, PersonaTaskMeta> | null
-): string[] {
-  if (!tasks || Object.keys(tasks).length === 0) return files;
-  return files.filter((filename) => {
-    const parsed = parseSavedFilename(filename);
-    if (!parsed) return false;
-    return Boolean(tasks[parsed.taskId]);
-  });
-}
-
-/** For separateVocals mode, show tracks with metadata AND audioId (vocals — instrumental tracks excluded).
- * When metadata is null or empty, show all files so tracks are visible while metadata loads. */
-function filterSeparateVocalsTracks(
-  files: string[],
-  tasks: Record<string, PersonaTaskMeta> | null
-): string[] {
-  if (!tasks || Object.keys(tasks).length === 0) return files;
-  return files.filter((filename) => {
-    const parsed = parseSavedFilename(filename);
-    if (!parsed) return false;
-    const task = tasks[parsed.taskId];
-    if (!task) return false;
-    if (task.instrumental === true) return false;
-    const track = task.tracks?.[parsed.index - 1];
-    return Boolean(track?.id);
-  });
-}
-
-/** For getLyrics mode, show vocal tracks with metadata and audioId. No 14-day filter. Instrumental excluded. */
-function filterGetLyricsTracks(
-  files: string[],
-  tasks: Record<string, PersonaTaskMeta> | null
-): string[] {
-  if (!tasks || Object.keys(tasks).length === 0) return files;
-  return files.filter((filename) => {
-    const parsed = parseSavedFilename(filename);
-    if (!parsed) return false;
-    const task = tasks[parsed.taskId];
-    if (!task) return false;
-    if (task.instrumental === true) return false;
-    const track = task.tracks?.[parsed.index - 1];
-    return Boolean(track?.id);
   });
 }
 
@@ -236,6 +355,21 @@ function isExtendedTrack(filename: string, tasks: Record<string, PersonaTaskMeta
   return task?.isExtension === true && !task?.isUploadExtension && !task?.isUploadCover;
 }
 
+/** True when track is from main generation only—no badge (not extended, mashup, add-*, etc.). Vocals or instrumental cases we just generated. */
+function isGeneratedTrack(filename: string, tasks: Record<string, PersonaTaskMeta> | null): boolean {
+  const task = getTask(filename, tasks);
+  if (!task) return false;
+  return (
+    !task.isExtension &&
+    !task.isUploadExtension &&
+    !task.isUploadCover &&
+    !task.isAddInstrumental &&
+    !task.isAddVocals &&
+    !task.isSeparateVocals &&
+    !task.isMashup
+  );
+}
+
 function isUploadExtendedTrack(filename: string, tasks: Record<string, PersonaTaskMeta> | null): boolean {
   return getTask(filename, tasks)?.isUploadExtension === true;
 }
@@ -260,6 +394,7 @@ function isMashupTrack(filename: string, tasks: Record<string, PersonaTaskMeta> 
   return getTask(filename, tasks)?.isMashup === true;
 }
 
+/** True when this task has generated cover artwork. Works for all variants: generated, extended, upload extended, upload covered, add instrumental, add vocals, mashup, etc. */
 function hasCoverImage(filename: string, tasks: Record<string, PersonaTaskMeta> | null): boolean {
   return getTask(filename, tasks)?.hasCoverImage === true;
 }
@@ -293,13 +428,20 @@ export function SavedTracksList({
   onSelectLoadFormFilename,
   showSearch = false,
   onNewGeneration,
+  showShareButton = false,
+  sectionTitle,
+  onTrackTypeFilterChange,
 }: SavedTracksListProps) {
+  const { data: session } = useSession();
   const showSelection = selectionMode != null;
   const isPersonaMode = selectionMode === "persona";
   const isExtendMode = selectionMode === "extend";
   const [savedFiles, setSavedFiles] = useState<string[]>([]);
+  const [sharedMap, setSharedMap] = useState<Record<string, boolean>>({});
+  const [sharedAtMap, setSharedAtMap] = useState<Record<string, string>>({});
   const [isLoadingFiles, setIsLoadingFiles] = useState(true);
   const [deletingFilename, setDeletingFilename] = useState<string | null>(null);
+  const [sharingFilename, setSharingFilename] = useState<string | null>(null);
   const [filenameToDelete, setFilenameToDelete] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -310,6 +452,7 @@ export function SavedTracksList({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchTaskIds, setSearchTaskIds] = useState<string[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [trackTypeFilter, setTrackTypeFilter] = useState<TrackTypeFilterValue>("all");
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 400);
   const selectedFilename = controlledFilename !== undefined ? controlledFilename : internalFilename;
   const setSelectedFilename = onSelectFilename ?? setInternalFilename;
@@ -327,32 +470,38 @@ export function SavedTracksList({
   const isGenerateLyricsMode = selectionMode === "generateLyrics";
   const isGenerateCoverMode = selectionMode === "generateCover";
   const isCreateMusicVideoMode = selectionMode === "createMusicVideo";
+  const isSharedMode = selectionMode === "shared";
   const filesToShow = useMemo(
-    () =>
-      isPersonaMode
-        ? filterVocalTracks(savedFiles, tasksEffective)
-        : isSeparateVocalsMode
-          ? filterSeparateVocalsTracks(savedFiles, tasksEffective)
-          : isGetLyricsMode || isCreateMusicVideoMode
-            ? filterGetLyricsTracks(savedFiles, tasksEffective)
+    () => {
+      if (isSharedMode) {
+        return filterByTaskMetadata(savedFiles, tasksEffective).filter((f) => sharedMap[f] === true);
+      }
+      return isPersonaMode
+          ? filterVocalTracks(savedFiles, tasksEffective)
+          : isSeparateVocalsMode || isGetLyricsMode || isCreateMusicVideoMode
+            ? filterVocalTracks(savedFiles, tasksEffective)
             : isGenerateLyricsMode
-              ? filterAllTracks(savedFiles, tasksEffective)
+              ? filterByTaskMetadata(savedFiles, tasksEffective)
               : isMashupMode || isGenerateCoverMode
-              ? savedFiles
-              : isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode || isAddVocalsMode
-                ? filterAllTracks(savedFiles, tasksEffective)
-                : isExtendMode
-                  ? filterRecentTracks(savedFiles, tasksEffective)
-                  : savedFiles,
-    [isPersonaMode, isSeparateVocalsMode, isGetLyricsMode, isCreateMusicVideoMode, isGenerateLyricsMode, isMashupMode, isUploadExtendMode, isUploadCoverMode, isAddInstrumentalMode, isAddVocalsMode, isGenerateCoverMode, isExtendMode, savedFiles, tasksEffective]
+                ? savedFiles
+                : isUploadExtendMode || isUploadCoverMode || isAddInstrumentalMode || isAddVocalsMode || isExtendMode
+                  ? filterByTaskMetadata(savedFiles, tasksEffective)
+                  : savedFiles;
+    },
+    [isSharedMode, isPersonaMode, isSeparateVocalsMode, isGetLyricsMode, isCreateMusicVideoMode, isGenerateLyricsMode, isMashupMode, isUploadExtendMode, isUploadCoverMode, isAddInstrumentalMode, isAddVocalsMode, isGenerateCoverMode, isExtendMode, savedFiles, tasksEffective, sharedMap]
   );
+  const typeFilteredFiles = useMemo(
+    () => filterByTrackType(filesToShow, trackTypeFilter, tasksEffective, sharedMap),
+    [filesToShow, trackTypeFilter, tasksEffective, sharedMap]
+  );
+
   const searchFilteredFiles = useMemo(() => {
-    if (searchTaskIds === null) return filesToShow;
-    return filesToShow.filter((filename) => {
+    if (searchTaskIds === null) return typeFilteredFiles;
+    return typeFilteredFiles.filter((filename) => {
       const parsed = parseSavedFilename(filename);
       return parsed !== null && searchTaskIds.includes(parsed.taskId);
     });
-  }, [filesToShow, searchTaskIds]);
+  }, [typeFilteredFiles, searchTaskIds]);
   const groups = useMemo(() => groupSavedFiles(searchFilteredFiles), [searchFilteredFiles]);
   const totalTrackCount = useMemo(() => {
     return groups.reduce((sum, g) => sum + g.files.length, 0);
@@ -369,9 +518,13 @@ export function SavedTracksList({
       const data = await res.json();
       if (res.ok && Array.isArray(data.files)) {
         setSavedFiles(data.files);
+        setSharedMap(typeof data.shared === "object" && data.shared !== null ? data.shared : {});
+        setSharedAtMap(typeof data.sharedAt === "object" && data.sharedAt !== null ? data.sharedAt : {});
       }
     } catch {
       setSavedFiles([]);
+      setSharedMap({});
+      setSharedAtMap({});
     } finally {
       setIsLoadingFiles(false);
     }
@@ -398,6 +551,20 @@ export function SavedTracksList({
       sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }, [savedFiles]);
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      setTrackTypeFilter("all");
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setTrackTypeFilter("all");
+  }, [selectionMode]);
+
+  useEffect(() => {
+    onTrackTypeFilterChange?.(trackTypeFilter);
+  }, [trackTypeFilter, onTrackTypeFilterChange]);
 
   useEffect(() => {
     if (!showSearch) return;
@@ -464,6 +631,32 @@ export function SavedTracksList({
     setFilenameToDelete(filename);
   }, []);
 
+  const handleShareToggle = useCallback(async (filename: string) => {
+    setSharingFilename(filename);
+    try {
+      const res = await fetch("/api/tracks/share", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename }),
+      });
+      const data = await res.json();
+      if (res.ok && typeof data.isShared === "boolean") {
+        setSharedMap((prev) => ({ ...prev, [filename]: data.isShared }));
+        setSharedAtMap((prev) => {
+          const next = { ...prev };
+          if (data.isShared && typeof data.sharedAt === "string") {
+            next[filename] = data.sharedAt;
+          } else {
+            delete next[filename];
+          }
+          return next;
+        });
+      }
+    } finally {
+      setSharingFilename(null);
+    }
+  }, []);
+
   return (
     <section ref={sectionRef} className="mb-10 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-6">
       <div className="relative flex items-center">
@@ -473,7 +666,7 @@ export function SavedTracksList({
           className="flex flex-1 items-center justify-center gap-2 rounded text-lg font-semibold text-gray-200 hover:text-gray-100 focus:outline-none"
           aria-expanded={!collapsed}
         >
-          Suno Audio Folder
+          {sectionTitle ?? "Suno Audio Folder"}
           <span
             className={`inline-block shrink-0 text-gray-500 transition-transform duration-200 ${collapsed ? "" : "rotate-180"}`}
             aria-hidden
@@ -507,9 +700,9 @@ export function SavedTracksList({
           </div>
         )}
         {!isLoadingFiles && showSearch && (
-          <div className="mb-4">
+          <div className="mb-4 space-y-2">
             {isSearching && (
-              <div className="mb-2 flex items-center justify-center gap-2 text-sm text-gray-400">
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
                 <span
                   className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-500 border-t-blue-500"
                   aria-hidden
@@ -530,6 +723,28 @@ export function SavedTracksList({
               className="w-full rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] px-3 py-2 text-sm text-[#f5f5f5] placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               aria-label="Search by prompt, style, title, negative tags"
             />
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+              {TRACK_TYPE_FILTER_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setTrackTypeFilter(opt.value)}
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors ${
+                    trackTypeFilter === opt.value
+                      ? "bg-blue-600/30 text-blue-400"
+                      : "text-gray-500 hover:bg-[#2a2a2a] hover:text-gray-300"
+                  }`}
+                  title={opt.label}
+                  aria-pressed={trackTypeFilter === opt.value}
+                >
+                  <TrackTypeFilterIcon
+                    icon={opt.icon}
+                    color={trackTypeFilter === opt.value ? "text-blue-400" : opt.color}
+                  />
+                  <span>{opt.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {isLoadingFiles ? null : (showSelection ? filesToShow.length === 0 : savedFiles.length === 0) ? (
@@ -562,7 +777,9 @@ export function SavedTracksList({
           </p>
         ) : searchFilteredFiles.length === 0 ? (
           <p className="text-sm text-gray-500">
-            No tracks match your search. Try a different prompt, style, or title.
+            {searchQuery.trim()
+              ? "No tracks match your search. Try a different prompt, style, or title."
+              : "No tracks match the selected filter. Try a different type."}
           </p>
         ) : (
           <div className="space-y-6">
@@ -682,7 +899,7 @@ export function SavedTracksList({
                           )}
                           {addInstrumental && (
                             <span
-                              className="inline-flex shrink-0 text-orange-400"
+                              className="inline-flex shrink-0 text-orange-300"
                               title="Add Instrumental"
                               aria-label="Add Instrumental"
                             >
@@ -754,36 +971,55 @@ export function SavedTracksList({
                         downloadFilename={filename}
                         aria-label={`Play ${parsed?.title ?? filename}`}
                       />
-                      {isGenerateLyricsMode ? null : showSelection ? (
-                        isPersonaMode && trackHasPersona(filename, tasksEffective, personasEffective) ? (
-                          <span
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-gray-500 opacity-60"
-                            aria-label="Persona already created for this track"
-                            title="Persona already created"
-                          >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            className={selectedFilename === filename ? SELECT_BTN_SELECTED : SELECT_BTN_UNSELECTED}
-                            onClick={() => onSelectFilename?.(filename)}
-                            title={selectedFilename === filename ? "Selected" : "Select this track"}
-                            aria-label={selectedFilename === filename ? "Selected" : "Select this track"}
-                          >
-                            {selectedFilename === filename ? (
-                              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-                              </svg>
-                            ) : (
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-                              </svg>
-                            )}
-                          </button>
+                      {isGenerateLyricsMode || isSharedMode ? (
+                        showShareButton && session?.user && (
+                          <ShareButton
+                            filename={filename}
+                            isShared={!!sharedMap[filename]}
+                            isUpdating={sharingFilename === filename}
+                            onShareToggle={handleShareToggle}
+                          />
                         )
+                      ) : showSelection ? (
+                        <>
+                          {isPersonaMode && trackHasPersona(filename, tasksEffective, personasEffective) ? (
+                            <span
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-gray-500 opacity-60"
+                              aria-label="Persona already created for this track"
+                              title="Persona already created"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              className={selectedFilename === filename ? SELECT_BTN_SELECTED : SELECT_BTN_UNSELECTED}
+                              onClick={() => onSelectFilename?.(filename)}
+                              title={selectedFilename === filename ? "Selected" : "Select this track"}
+                              aria-label={selectedFilename === filename ? "Selected" : "Select this track"}
+                            >
+                              {selectedFilename === filename ? (
+                                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                                </svg>
+                              )}
+                            </button>
+                          )}
+                          {showShareButton && session?.user && (
+                            <ShareButton
+                              filename={filename}
+                              isShared={!!sharedMap[filename]}
+                              isUpdating={sharingFilename === filename}
+                              onShareToggle={handleShareToggle}
+                            />
+                          )}
+                        </>
                       ) : (
                         <>
                           {showLoadFormRadio && taskId && (
@@ -804,6 +1040,14 @@ export function SavedTracksList({
                                 </svg>
                               )}
                             </button>
+                          )}
+                          {showShareButton && session?.user && (
+                            <ShareButton
+                              filename={filename}
+                              isShared={!!sharedMap[filename]}
+                              isUpdating={sharingFilename === filename}
+                              onShareToggle={handleShareToggle}
+                            />
                           )}
                           <button
                             type="button"

@@ -88,6 +88,7 @@ export default function Home() {
   const [mashupSelectingForSlot, setMashupSelectingForSlot] = useState<1 | 2>(1);
   const [mashupSlot1Filename, setMashupSlot1Filename] = useState<string | null>(null);
   const [mashupSlot2Filename, setMashupSlot2Filename] = useState<string | null>(null);
+  const [tracksOnlyView, setTracksOnlyView] = useState(false);
 
   const handleNewGeneration = useCallback(() => {
     // Stop all playing audio and reset to start
@@ -120,6 +121,10 @@ export default function Home() {
     },
     [mashupSelectingForSlot]
   );
+
+  const handleTrackTypeFilterChange = useCallback((filter: string) => {
+    setTracksOnlyView(filter !== "all");
+  }, []);
 
   // Resolve audioId from persona metadata for the extend feature
   const resolveAudioId = useCallback(
@@ -296,17 +301,17 @@ export default function Home() {
           selectionMode={
             mode === "persona" ? "persona"
               : mode === "extend" ? "extend"
-                : mode === "uploadExtend" ? "uploadExtend"
-                  : mode === "uploadCover" ? "uploadCover"
-                    : mode === "addInstrumental" ? "addInstrumental"
-                      : mode === "addVocals" ? "addVocals"
-                        : mode === "separateVocals" ? "separateVocals"
-                          : mode === "mashup" ? "mashup"
-                            : mode === "getLyrics" ? "getLyrics"
-                              : mode === "generateLyrics" ? "generateLyrics"
-                              : mode === "generateCover" ? "generateCover"
-                              : mode === "createMusicVideo" ? "createMusicVideo"
-                              : undefined
+                  : mode === "uploadExtend" ? "uploadExtend"
+                    : mode === "uploadCover" ? "uploadCover"
+                      : mode === "addInstrumental" ? "addInstrumental"
+                        : mode === "addVocals" ? "addVocals"
+                          : mode === "separateVocals" ? "separateVocals"
+                            : mode === "mashup" ? "mashup"
+                              : mode === "getLyrics" ? "getLyrics"
+                                : mode === "generateLyrics" ? "generateLyrics"
+                                : mode === "generateCover" ? "generateCover"
+                                : mode === "createMusicVideo" ? "createMusicVideo"
+                                : undefined
           }
           personaMetadata={personaTasks}
           personas={personaList}
@@ -319,9 +324,11 @@ export default function Home() {
               ? handleNewGeneration
               : undefined
           }
+          showShareButton={true}
+          onTrackTypeFilterChange={handleTrackTypeFilterChange}
         />
 
-        {mode === "persona" && (
+        {mode === "persona" && !tracksOnlyView && (
           <PersonasList
             personaMetadata={personaTasks}
             personas={personaList}
@@ -331,7 +338,7 @@ export default function Home() {
           />
         )}
 
-        {mode === "generate" && (
+        {mode === "generate" && !tracksOnlyView && (
           <>
             <GenerateForm
               statusState={statusState}
@@ -342,7 +349,7 @@ export default function Home() {
             <GenerationStatus statusState={statusState} />
           </>
         )}
-        {mode === "mashup" && (
+        {mode === "mashup" && !tracksOnlyView && (
           <MashupSection
             statusState={mashupStatusState}
             setStatusState={setMashupStatusState}
@@ -361,7 +368,7 @@ export default function Home() {
             onClearSlot2={() => setMashupSlot2Filename(null)}
           />
         )}
-        {mode === "extend" && (
+        {mode === "extend" && !tracksOnlyView && (
           <ExtendSection
             statusState={extendStatusState}
             setStatusState={setExtendStatusState}
@@ -371,7 +378,7 @@ export default function Home() {
             resetKey={extendResetKey}
           />
         )}
-        <div className={mode === "uploadExtend" ? "" : "hidden"}>
+        <div className={mode === "uploadExtend" && !tracksOnlyView ? "" : "hidden"}>
           <UploadExtendSection
             statusState={uploadExtendStatusState}
             setStatusState={setUploadExtendStatusState}
@@ -383,7 +390,7 @@ export default function Home() {
             resetKey={uploadExtendResetKey}
           />
         </div>
-        <div className={mode === "uploadCover" ? "" : "hidden"}>
+        <div className={mode === "uploadCover" && !tracksOnlyView ? "" : "hidden"}>
           <UploadCoverSection
             statusState={uploadCoverStatusState}
             setStatusState={setUploadCoverStatusState}
@@ -395,7 +402,7 @@ export default function Home() {
             resetKey={uploadCoverResetKey}
           />
         </div>
-        <div className={mode === "addInstrumental" ? "" : "hidden"}>
+        <div className={mode === "addInstrumental" && !tracksOnlyView ? "" : "hidden"}>
           <AddInstrumentalSection
             statusState={addInstrumentalStatusState}
             setStatusState={setAddInstrumentalStatusState}
@@ -406,7 +413,7 @@ export default function Home() {
             resetKey={addInstrumentalResetKey}
           />
         </div>
-        <div className={mode === "addVocals" ? "" : "hidden"}>
+        <div className={mode === "addVocals" && !tracksOnlyView ? "" : "hidden"}>
           <AddVocalsSection
             statusState={addVocalsStatusState}
             setStatusState={setAddVocalsStatusState}
@@ -417,7 +424,7 @@ export default function Home() {
             resetKey={addVocalsResetKey}
           />
         </div>
-        <div className={mode === "separateVocals" ? "" : "hidden"}>
+        <div className={mode === "separateVocals" && !tracksOnlyView ? "" : "hidden"}>
           <SeparateVocalsSection
             statusState={separateVocalsStatusState}
             setStatusState={setSeparateVocalsStatusState}
@@ -427,7 +434,7 @@ export default function Home() {
             onClearSelection={() => setSelectedAudioFilename(null)}
           />
         </div>
-        {mode === "getLyrics" && (
+        {mode === "getLyrics" && !tracksOnlyView && (
           <GetLyricsSection
             selectedTrackFilename={selectedAudioFilename}
             selectedTrackName={selectedTrackDisplayName}
@@ -435,15 +442,15 @@ export default function Home() {
             onClearSelection={() => setSelectedAudioFilename(null)}
           />
         )}
-        {mode === "generateLyrics" && <GenerateLyricsSection />}
-        {mode === "generateCover" && (
+        {mode === "generateLyrics" && !tracksOnlyView && <GenerateLyricsSection />}
+        {mode === "generateCover" && !tracksOnlyView && (
           <GenerateCoverSection
             selectedTrackFilename={selectedAudioFilename}
             selectedTrackName={selectedTrackDisplayName}
             onClearSelection={() => setSelectedAudioFilename(null)}
           />
         )}
-        {mode === "createMusicVideo" && (
+        {mode === "createMusicVideo" && !tracksOnlyView && (
           <CreateMusicVideoSection
             selectedTrackFilename={selectedAudioFilename}
             selectedTrackName={selectedTrackDisplayName}
@@ -451,7 +458,7 @@ export default function Home() {
             onClearSelection={() => setSelectedAudioFilename(null)}
           />
         )}
-        {mode === "persona" && (
+        {mode === "persona" && !tracksOnlyView && (
           <CreatePersonaSection
             selectedAudioFilename={selectedAudioFilename}
             personaMetadata={personaTasks}

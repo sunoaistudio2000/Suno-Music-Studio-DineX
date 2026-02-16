@@ -86,6 +86,9 @@ model Track {
   localFilename   String?    // e.g. taskId-1-Title.mp3 for playback after save
   videoTaskId     String?    // kie.ai video generation task ID
   videoFilename   String?    // local filename in audio/ (e.g. taskId-1-title.mp4)
+  isShared        Boolean    @default(false)
+  sharedAt        DateTime? // when the track was last shared (null if not shared)
+  sharedCoverIndex Int?     // 0-based index into Generation.coverImages; when set, use this cover when shared
   createdAt       DateTime   @default(now())
   generation      Generation? @relation(fields: [generationId], references: [id], onDelete: SetNull)
 }

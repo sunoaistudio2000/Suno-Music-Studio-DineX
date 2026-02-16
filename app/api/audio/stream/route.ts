@@ -1,7 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { readFile } from "fs/promises";
 import path from "path";
 import { AUDIO_DIR, isSafeFilename, isSafeCoverFilename, isSafeVideoFilename } from "@/lib/audio";
+import { prisma } from "@/lib/prisma";
+
+/** Extract taskId from cover filename (taskId-cover-N.png). */
+function taskIdFromCoverFilename(filename: string): string | null {
+  const match = filename.match(/^(.+)-cover-\d+\.png$/);
+  return match ? match[1]! : null;
+}
+
+/** Check if the file is accessible: user owns it (auth) or it belongs to a shared track (public). */
+async function isFileAccessible(
+  filename: string,
+  userId: string | null
+): Promise<boolean> {
+  const isCover = filename.endsWith(".png");
+  const isVideo = filename.endsWith(".mp4");
+  const isAudio = filename.endsWith(".mp3");
+
+  if (isAudio) {
+    const track = await prisma.track.findFirst({
+      where: { localFilename: filename },
+      select: { id: true, isShared: true, generation: { select: { userId: true } } },
+    });
+    if (!track) return false;
+    if (track.isShared) return true;
+    return userId !== null && track.generation?.userId === userId;
+  }
+
+  if (isVideo) {
+    const track = await prisma.track.findFirst({
+      where: { videoFilename: filename },
+      select: { id: true, isShared: true, generation: { select: { userId: true } } },
+    });
+    if (!track) return false;
+    if (track.isShared) return true;
+    return userId !== null && track.generation?.userId === userId;
+  }
+
+  if (isCover) {
+    const taskId = taskIdFromCoverFilename(filename);
+    if (!taskId) return false;
+    // Multiple tracks can share the same taskId (e.g. 2 songs per generation). Allow access if ANY
+    // track with this taskId is shared or owned by the user.
+    const tracks = await prisma.track.findMany({
+      where: { taskId },
+      select: { isShared: true, generation: { select: { userId: true } } },
+    });
+    if (tracks.length === 0) return false;
+    const anyShared = tracks.some((t) => t.isShared);
+    if (anyShared) return true;
+    return userId !== null && tracks.some((t) => t.generation?.userId === userId);
+  }
+
+  return false;
+}
 
 /** Parse Range header "bytes=start-end" or "bytes=start-". Returns { start, end } or null. */
 function parseRange(rangeHeader: string | null, totalLength: number): { start: number; end: number } | null {
@@ -28,6 +83,16 @@ export async function GET(request: NextRequest) {
   const filePath = path.join(AUDIO_DIR, filename);
   if (!filePath.startsWith(AUDIO_DIR)) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+  }
+
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  const accessible = await isFileAccessible(filename, token?.sub ?? null);
+  if (!accessible) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const isCover = filename.endsWith(".png");

@@ -5,6 +5,7 @@ import { getCoverCallbackUrl } from "@/lib/api-callback";
 import { validateRequired } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
 import { downloadAndSaveCoverImages } from "@/lib/cover-images";
+import { resolveCoverImages } from "@/lib/audio";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
 
@@ -118,11 +119,12 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      const resolvedCovers = resolveCoverImages(parentTaskId, coverImages.length > 0 ? coverImages : genToUse?.coverImages);
       return NextResponse.json({
         coverTaskId: existingCoverTaskId,
         existing: true,
         images: images ?? [],
-        coverImages: coverImages.length > 0 ? coverImages : undefined,
+        coverImages: resolvedCovers.length > 0 ? resolvedCovers : undefined,
         parentTaskId,
       });
     }

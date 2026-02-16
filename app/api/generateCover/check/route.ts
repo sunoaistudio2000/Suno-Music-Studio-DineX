@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
+import { resolveCoverImages } from "@/lib/audio";
 
 export async function GET(request: NextRequest) {
   const token = await getToken({
@@ -22,13 +23,14 @@ export async function GET(request: NextRequest) {
     select: { coverImages: true, coverTaskId: true },
   });
 
-  if (!generation || !generation.coverImages?.length) {
+  const coverImages = resolveCoverImages(musicTaskId.trim(), generation?.coverImages);
+  if (coverImages.length === 0) {
     return NextResponse.json({ hasCover: false });
   }
 
   return NextResponse.json({
     hasCover: true,
-    coverImages: generation.coverImages,
-    coverTaskId: generation.coverTaskId ?? undefined,
+    coverImages,
+    coverTaskId: generation?.coverTaskId ?? undefined,
   });
 }

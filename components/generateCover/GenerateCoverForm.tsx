@@ -26,6 +26,9 @@ export function GenerateCoverForm({
   const [coverStatus, setCoverStatus] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(false);
   const [modalImage, setModalImage] = useState<string | null>(null);
+  const [isShared, setIsShared] = useState(false);
+  const [sharedCoverIndex, setSharedCoverIndex] = useState(0);
+  const [isSettingCover, setIsSettingCover] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const parsed = selectedTrackFilename ? parseSavedFilename(selectedTrackFilename) : null;
@@ -48,14 +51,21 @@ export function GenerateCoverForm({
     if (!musicTaskId) {
       setCoverImages([]);
       setImageUrls([]);
+      setIsShared(false);
+      setSharedCoverIndex(0);
       return;
     }
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`/api/generateCover/check?taskId=${encodeURIComponent(musicTaskId)}`);
-        const data = await res.json();
-        if (cancelled || !res.ok) return;
+        const [checkRes, statusRes] = await Promise.all([
+          fetch(`/api/generateCover/check?taskId=${encodeURIComponent(musicTaskId)}`),
+          selectedTrackFilename
+            ? fetch(`/api/tracks/cover-status?filename=${encodeURIComponent(selectedTrackFilename)}`)
+            : null,
+        ]);
+        const data = await checkRes.json();
+        if (cancelled || !checkRes.ok) return;
         if (data.hasCover && Array.isArray(data.coverImages) && data.coverImages.length > 0) {
           setCoverImages(data.coverImages);
           setImageUrls([]);
@@ -63,17 +73,31 @@ export function GenerateCoverForm({
           setCoverImages([]);
           setImageUrls([]);
         }
+        if (statusRes?.ok) {
+          const statusData = await statusRes.json();
+          if (!cancelled) {
+            setIsShared(statusData.isShared ?? false);
+            setSharedCoverIndex(statusData.sharedCoverIndex ?? 0);
+          }
+        } else {
+          if (!cancelled) {
+            setIsShared(false);
+            setSharedCoverIndex(0);
+          }
+        }
       } catch {
         if (!cancelled) {
           setCoverImages([]);
           setImageUrls([]);
+          setIsShared(false);
+          setSharedCoverIndex(0);
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [musicTaskId]);
+  }, [musicTaskId, selectedTrackFilename]);
 
   useEffect(() => {
     return () => stopPolling();
@@ -192,6 +216,27 @@ export function GenerateCoverForm({
     }
   }, []);
 
+  const handleSetSharedCover = useCallback(
+    async (index: number) => {
+      if (!selectedTrackFilename || isSettingCover) return;
+      setIsSettingCover(true);
+      try {
+        const res = await fetch("/api/tracks/share-cover", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: selectedTrackFilename, coverIndex: index }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setSharedCoverIndex(data.sharedCoverIndex ?? index);
+        }
+      } finally {
+        setIsSettingCover(false);
+      }
+    },
+    [selectedTrackFilename, isSettingCover]
+  );
+
   const inProgress = coverStatus === "PENDING" || coverStatus === "GENERATING";
   const statusLabel = coverStatus === "GENERATING" ? "Generating" : "Pending";
   const statusDescription =
@@ -303,26 +348,53 @@ export function GenerateCoverForm({
 
         {displayImages.length > 0 && (
           <div className="mt-6 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-6">
-            <h3 className="mb-3 text-sm font-medium text-gray-300">Cover Images</h3>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-medium text-gray-300">Cover Images</h3>
+              {isShared && (
+                <span className="rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-400">
+                  Shared
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {displayImages.map((src, i) => {
                 const isLocal = coverImages.length > 0;
                 const imgSrc = isLocal
                   ? `/api/audio/stream?filename=${encodeURIComponent(src)}`
                   : src;
+                const isSharedCover = isShared && i === sharedCoverIndex;
                 return (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setModalImage(imgSrc)}
-                    className="overflow-hidden rounded-xl border border-[#2a2a2a] text-left transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#1a1a1a]"
-                  >
-                    <img
-                      src={imgSrc}
-                      alt={`Cover ${i + 1}`}
-                      className="h-auto w-full object-cover"
-                    />
-                  </button>
+                  <div key={i} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setModalImage(imgSrc)}
+                      className="overflow-hidden rounded-xl border-2 text-left transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#1a1a1a]"
+                      style={{
+                        borderColor: isSharedCover ? "rgb(16 185 129)" : "rgb(42 42 42)",
+                      }}
+                    >
+                      <img
+                        src={imgSrc}
+                        alt={`Cover ${i + 1}`}
+                        className="h-auto w-full object-cover"
+                      />
+                      {isSharedCover && (
+                        <div className="absolute left-2 top-2 rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-300 bg-black/50">
+                          Shared
+                        </div>
+                      )}
+                    </button>
+                    {isLocal && (
+                      <button
+                        type="button"
+                        onClick={() => handleSetSharedCover(i)}
+                        disabled={isSettingCover || (isShared && i === sharedCoverIndex)}
+                        className="mt-2 w-full rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] px-3 py-1.5 text-xs text-gray-400 transition-colors hover:border-emerald-600/50 hover:bg-emerald-950/30 hover:text-emerald-400 disabled:opacity-50"
+                      >
+                        {isShared && i === sharedCoverIndex ? "Shared cover" : "Set as shared cover"}
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>

@@ -1,0 +1,59 @@
+Title:  Eternal Echoes
+
+Prompt:
+
+[Intro: Soft felt piano with a low, mourning cello drone]
+[**Spoken: Male voice, distant echo**]
+The clock has stopped... but the resonance remains.
+
+[Verse 1: **Male Singer**]
+The ivory is weeping, I’m tracing the dust on the keys
+The memory is keeping, the secrets that fall to their knees
+I’m lost in the stone, where the shadows are starting to play
+A kingdom of bone, for a soul that has withered away
+
+[Verse 2: **Female Singer**]
+The marble is cold, I’m crossing the floor of the past
+The stories untold, are the ones that were destined to last
+I’m feeling the pulse, of a heart that is made out of rain
+The silence is false, just a mask for the weight of the pain!
+
+[Chorus: **Both, Vocal Harmonies**]
+We’re carrying the weight, of a world that is frozen in time
+Defying our fate, in a ritual dark and sublime
+They want to erase us, want to see the melody end
+But the music is deep, on a grace that we cannot defend!
+
+[Instrumental Solo: Emotional violin solo, weeping cello counterpoint]
+
+[Bridge: **Call and Response**]
+[**Male**]: They said the door was barred...
+[**Female**]: And the song was finished...
+[**Male**]: But we found the spark...
+[**Female**]: Where the fire was never diminished!
+[**Both, Shouted/Operatic**]: RESONATE! BREAK THE VOID!
+
+[Final Chorus: **Both, Maximum Energy, Soaring Strings**]
+We’re carrying the weight, of a world that is frozen in time
+Defying our fate, in a ritual dark and sublime
+They want to erase us, want to see the melody end
+But the music is deep, on a grace that we cannot defend!
+
+[Outro: Fading piano notes, cold orchestral decay]
+[**Whisper: Both**]
+Resonance... fading...
+[End]
+
+Style: 75 BPM, Male and Female Duet, Neoclassical, Orchestral, Grand Piano, Chamber Strings, Cathedral Reverb [Negative: Drums, Synthesizers, Electronic, Bass, Electric Guitar, Pop, Rock, Beat, Autotune, Distortion, Metal, Low Quality
+
+Negative Tags: Drums, percussion, beat, synthesizer, electronic, bass, electric guitar, autotune, pop, rock, metal, low quality, muddy, distorted, lo-fi, hiss, static
+
+Vocal Gender: Duet
+
+Model: V5
+
+Style Weight: 0.95
+
+Weirdness: 0.40
+
+Audio Weight: 0 

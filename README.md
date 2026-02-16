@@ -36,6 +36,9 @@ Easily get lyrics, create lyrics and cover art for your tracks.
 #### 🎵  Music Video Visualizer: Rotating Vinyl with Lyrics
 Created dynamic music videos from generated tracks with simple yet engaging visualizations. The video features a rotating vinyl record synchronized with the song’s lyrics, bringing the music to life visually.
 
+#### 🎧 Studio & Dashboard: Track Management and Sharing
+Manage, share, and discover music tracks seamlessly. Users can switch between Studio mode for generating and managing tracks, and the Dashboard for exploring shared tracks. Upload, extend, and choose track covers, with shared tracks appearing at the top of the Recent list for easy access.
+
 #### 👉 Links & Resources
 
 - [Suno](https://suno.com/)  
@@ -89,3 +92,5 @@ npm run dev
 📺 **Video:(Get & Generate Song Lyrics + Covers)** [Watch on YouTube](https://youtu.be/kkwSlLig78Q) 
 
 📺 **Video:(Animated Music Video Visualizer)** [Watch on YouTube](https://youtu.be/1rmYvJFBX7I) 
+
+📺 **Video:(Music Dashboard & Sharing)** [Watch on YouTube](https://youtu.be/4aJgQuy1n-A) 

@@ -1,11 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
 import type { PersonaTaskMeta, PersonaTrackMeta } from "@/app/types";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  if (!token?.sub) {
+    return NextResponse.json({ tasks: {} });
+  }
+
   try {
     const tracks = await prisma.track.findMany({
-      where: { taskId: { not: "" } },
+      where: {
+        taskId: { not: "" },
+        generation: { userId: token.sub },
+      },
       orderBy: [{ taskId: "asc" }, { index: "asc" }],
     });
     const tasks: Record<string, PersonaTaskMeta> = {};
@@ -24,7 +33,7 @@ export async function GET() {
     const taskIds = Object.keys(tasks);
     if (taskIds.length > 0) {
       const generations = await prisma.generation.findMany({
-        where: { taskId: { in: taskIds } },
+        where: { taskId: { in: taskIds }, userId: token.sub },
         select: {
           taskId: true,
           instrumental: true,

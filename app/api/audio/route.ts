@@ -1,20 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { unlink } from "fs/promises";
 import path from "path";
 import { AUDIO_DIR, isSafeFilename } from "@/lib/audio";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  if (!token?.sub) {
+    return NextResponse.json({ error: "Sign in to list tracks" }, { status: 401 });
+  }
+
   try {
     const tracks = await prisma.track.findMany({
-      where: { localFilename: { not: null } },
-      select: { localFilename: true },
+      where: {
+        localFilename: { not: null },
+        generation: { userId: token.sub },
+      },
+      select: { localFilename: true, isShared: true, sharedAt: true },
       orderBy: { createdAt: "desc" },
     });
     const files = tracks
       .map((t: { localFilename: string | null }) => t.localFilename)
       .filter((f: string | null): f is string => typeof f === "string" && f.length > 0);
-    return NextResponse.json({ files });
+    const shared: Record<string, boolean> = {};
+    const sharedAt: Record<string, string> = {};
+    for (const t of tracks) {
+      if (t.localFilename) {
+        shared[t.localFilename] = t.isShared ?? false;
+        if (t.sharedAt) sharedAt[t.localFilename] = t.sharedAt.toISOString();
+      }
+    }
+    return NextResponse.json({ files, shared, sharedAt });
   } catch (err) {
     return NextResponse.json({ error: "Failed to list tracks" }, { status: 500 });
   }

@@ -1,0 +1,61 @@
+Title:  Iron Horizon
+
+Prompt:
+
+[Intro: Fast harmonized guitar riffs, explosive double-bass drumming]
+
+[Verse 1: **Gritty Male Vocals**]
+The sky is turning to a wall of lead
+The words of prophets that we never read
+We're walking lines on a jagged blade
+In the ruins of the world we made!
+
+[Verse 2: **Clean Female Vocals - Soaring**]
+But there’s a flicker in the iron dark
+A frozen engine waiting for a spark
+I see the future in a drop of rain
+We’re breaking free from the electric chain!
+
+[Pre-Chorus: **Both - Building Tension**]
+The gears are turning, the blood is burning
+The pressure rising till we break the core!
+
+[Chorus: **Both - Anthemic Harmonies**]
+On the Iron Horizon, we’re chasing the sun
+The battle is starting, but never is done
+With hearts made of thunder and spirits of steel
+We’re crushing the shadows under the wheel!
+
+[Instrumental Solo: Fast shredding guitar solo, sweep picking, technical drum fills]
+
+[Bridge: **Call and Response**]
+[**Male**]: No more surrender!
+[**Female**]: No more retreat!
+[**Male**]: We find our glory...
+[**Female**]: ...In every defeat!
+[**Both - Shouted**]: LIGHT THE FIRE!
+
+[Final Chorus: **Both - Maximum Power**]
+On the Iron Horizon, we’re chasing the sun
+The battle is starting, but never is done
+With hearts made of thunder and spirits of steel
+We’re crushing the shadows under the wheel!
+
+[Outro: Heavy rhythmic chugging, fading guitar feedback]
+[**Male**]: The horizon...
+[**Female**]: ...is ours.
+[End]
+
+Style: 160 BPM, Melodic Metal Duet, Male and Female Vocals, Power Metal, Heavy Distorted Guitars, Double Kick Drums, Soaring Synth Melodies, Anthemic, High Energy [Negative: Acoustic, Jazz, Funk, Hip-hop, Lo-fi, Soft, Slow, Country, Trumpet, Saxophone
+
+Negative Tags: Acoustic, piano, soft, jazz, funk, country, pop, edm, rap, techno, lo-fi, saxophone, trumpet, flute, whistling, slow, quiet, brass, banjo, ukulele, thin, muddy, low quality
+
+Vocal Gender: Duet
+
+Model: V5
+
+Style Weight: 0.85
+
+Weirdness: 0.50
+
+Audio Weight: 0 

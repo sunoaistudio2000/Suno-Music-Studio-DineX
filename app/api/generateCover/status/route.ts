@@ -3,6 +3,7 @@ import { getToken } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
 import { parseKieResponse } from "@/lib/api-error";
 import { downloadAndSaveCoverImages } from "@/lib/cover-images";
+import { resolveCoverImages } from "@/lib/audio";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
 
@@ -114,10 +115,14 @@ export async function GET(request: NextRequest) {
   const status =
     isSuccess ? "SUCCESS" : successFlag === 3 ? "FAILED" : successFlag === 2 ? "GENERATING" : "PENDING";
 
+  const resolvedCovers = parentTaskId
+    ? resolveCoverImages(parentTaskId, savedCoverImages.length > 0 ? savedCoverImages : undefined)
+    : savedCoverImages;
+
   return NextResponse.json({
     successFlag,
     images,
-    coverImages: savedCoverImages.length > 0 ? savedCoverImages : undefined,
+    coverImages: resolvedCovers.length > 0 ? resolvedCovers : undefined,
     parentTaskId,
     status,
   });

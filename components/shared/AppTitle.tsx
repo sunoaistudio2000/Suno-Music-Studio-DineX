@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 const SUNO_LOGO_URL = "https://www.suno.com/favicon.ico";
 
 type AppTitleProps = {
@@ -31,12 +33,33 @@ export function AppTitle({ variant = "hero", className = "" }: AppTitleProps) {
 type AppTitleWithLogoProps = {
   className?: string;
   titleClassName?: string;
+  /** When set, the whole title links here (e.g. "/"); logo becomes non-clickable to avoid nested anchors */
+  href?: string;
 };
 
 /** Logo + "Suno Music Studio" title; same block for signed-in and signed-out views. */
-export function AppTitleWithLogo({ className = "", titleClassName = "" }: AppTitleWithLogoProps) {
+export function AppTitleWithLogo({ className = "", titleClassName = "", href }: AppTitleWithLogoProps) {
+  const content = (
+    <>
+      <span className="flex shrink-0" aria-hidden>
+        <img src={SUNO_LOGO_URL} alt="" className="h-10 w-10" width={40} height={40} />
+      </span>
+      <AppTitle className={titleClassName} />
+    </>
+  );
+
+  const wrapperClass = `flex flex-wrap items-center justify-center gap-3 text-center ${className}`.trim();
+
+  if (href) {
+    return (
+      <Link href={href} className={`focus:outline-none rounded-lg ${wrapperClass}`.trim()}>
+        {content}
+      </Link>
+    );
+  }
+
   return (
-    <div className={`flex flex-wrap items-center justify-center gap-3 text-center ${className}`.trim()}>
+    <div className={wrapperClass}>
       <a
         href="https://www.suno.com"
         target="_blank"
